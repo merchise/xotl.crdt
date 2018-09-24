@@ -1,0 +1,183 @@
+---
+stages:
+  - pre-check
+  - test doc
+  - unit-test
+  - check
+  - build
+  - publish
+
+check code smells:
+  script: merchise_lint3
+  stage: pre-check
+  tags:
+    - merchise-lint
+  only:
+    - branches
+
+.run_tox_tests: &run_tox_tests
+  stage: unit-test
+  script:
+    - tox -e $PYTHON-unit
+  tags:
+    - tox
+
+.run_tox_staticcheck: &run_tox_staticcheck
+  stage: pre-check
+  allow_failure: true
+  script:
+    - tox -e 3.6-staticcheck
+  tags:
+    - tox
+
+.run_tox_doctest: &run_tox_doctest
+  stage: test doc
+  script:
+    - tox -e 3.6-doctest
+  tags:
+    - virtualenv
+
+
+run tests with Python 3.6:
+  <<: *run_tox_tests
+  variables:
+    PYTHON: "3.6"
+  only:
+    - branches
+
+run tests with Python 3.7:
+  <<: *run_tox_tests
+  variables:
+    PYTHON: "3.7"
+  allow_failure: true
+  only:
+    - branches
+
+
+run static checks:
+  <<: *run_tox_staticcheck
+  only:
+    - branches
+
+run doctests:
+  <<: *run_tox_doctest
+  only:
+    - branches
+  allow_failure: true
+
+
+check signature of tag:
+  stage: check
+  script:
+    - git verify-tag $CI_COMMIT_REF_NAME
+  tags:
+    - git
+    - gpg
+  only:
+    - tags
+
+build source distribution:
+  stage: build
+  script:
+    - rm -f dist/*
+    - python setup.py sdist
+  tags:
+    - python
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - tags
+
+build binary distribution:
+  stage: build
+  script:
+    - rm -f dist/*
+    - python setup.py bdist_wheel
+  tags:
+    - wheel
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - tags
+
+publish_locally:
+  stage: publish
+  script:
+    - ssh manu@gestion.lahavane.com "mkdir -p Repos/$CI_PROJECT_NAME"
+    - scp dist/* manu@gestion.lahavane.com:Repos/$CI_PROJECT_NAME/
+  tags:
+    - repo.lahavane.com
+  only:
+    - tags
+  environment:
+    name: repo.lahavane.com
+    url: http://repo.lahavane.com/pypi/$CI_PROJECT_NAME
+  dependencies:
+    - check signature of tag
+    - build source distribution
+    - build binary distribution
+
+
+publish_pypi:
+  stage: publish
+  script:
+    - twine upload dist/*
+  tags:
+    - twine
+  only:
+    - tags
+  dependencies:
+    - check signature of tag
+    - build source distribution
+    - build binary distribution
+  environment:
+    name: pypi
+    url: https://pypi.python.org/pypi/$CI_PROJECT_NAME
+
+
+build documentation:
+  stage: build
+  script:
+    - rm -rf `pipenv --venv`
+    - pipenv install --dev --skip-lock
+    - source `pipenv --venv`/bin/activate
+    - pip install sphinx sphinx-rtd-theme
+    - pip install -e .
+    - make -C docs/ html
+    - cd docs/build/html
+    - tar -cjf ../../../$CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2 ./
+  artifacts:
+    paths:
+      - $CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2
+    expire_in: 4 days
+  tags:
+    - pipenv
+  only:
+    - tags
+    - /^releases-/
+    - master
+
+publish in our rtd:
+  variables:
+    GIT_STRATEGY: none
+  stage: publish
+  script:
+    - scp $CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2 rtd@docs.lahavane.com:.
+    - ssh rtd@docs.lahavane.com mkdir -p $CI_PROJECT_NAME/.$CI_COMMIT_SHA
+    - ssh rtd@docs.lahavane.com tar -xf $CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2 -C $CI_PROJECT_NAME/.$CI_COMMIT_SHA
+    - ssh rtd@docs.lahavane.com "rm -r /var/www/html/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME; ln -sr /var/www/html/$CI_PROJECT_NAME/.$CI_COMMIT_SHA /var/www/html/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME"
+    - ssh rtd@docs.lahavane.com rm $CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2
+    - ssh rtd@docs.lahavane.com "cd /var/www/html/$CI_PROJECT_NAME; ls -al | grep -oE '\.([0-9]|[a-z])*$' | sort | uniq -c | grep '1 ' | grep -oE '\.([0-9]|[a-z])*$' | xargs rm -rf"
+  tags:
+    - rtd@docs.lahavane.com
+  dependencies:
+    - build documentation
+  environment:
+    name: docs.lahavane.com
+    url: http://docs.lahavane.com/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME
+  only:
+    - tags
+    - /^releases-/
+    - master
