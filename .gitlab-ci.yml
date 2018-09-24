@@ -38,6 +38,14 @@ check code smells:
     - virtualenv
 
 
+run tests with Python 2.7:
+  <<: *run_tox_tests
+  variables:
+    PYTHON: "2.7"
+  only:
+    - branches
+
+
 run tests with Python 3.6:
   <<: *run_tox_tests
   variables:
