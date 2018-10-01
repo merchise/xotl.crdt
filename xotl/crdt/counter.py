@@ -11,7 +11,9 @@ from xotl.crdt.vclock import VClock
 
 
 class GCounter(CvRDT):
-    # The G-Counter is basically an actor-limited interface for the vclock.
+    '''A increment-only counter.
+
+    '''
     def __init__(self, *, actor: str):
         self.actor = actor
         self.vclock = VClock()
@@ -20,25 +22,24 @@ class GCounter(CvRDT):
         return f"<GCounter of {self.value}; in {self.actor} with {self.vclock}>"
 
     def incr(self):
+        'Increases the counter by one.'
         self.vclock = self.vclock.bump(self.actor)
 
     @property
     def value(self):
+        'The current value of the counter'
         return sum(d.counter for d in self.vclock.dots)
 
     def merge(self, other: 'GCounter'):
         'Merge this replica with another in-place'
         self.vclock = self.vclock.merge(other.vclock)
 
-    @property
-    def state(self):
-        return self
-
     def __le__(self, other):
         return self.vclock <= other.vclock
 
 
 class PNCounter(CvRDT):
+    '''A counter that allows increments and decrements.'''
     def __init__(self, *, actor: str):
         self.actor = actor
         self.pos = GCounter(actor=actor)
@@ -48,23 +49,22 @@ class PNCounter(CvRDT):
         return f"<PNCounter of {self.value}; with {self.pos} and {self.neg}>"
 
     def incr(self):
+        'Increase the counter by one.'
         self.pos.incr()
 
     def decr(self):
+        'Decreases the counter by one.'
         self.neg.incr()
 
     @property
     def value(self):
+        'The current value of the counter.'
         return self.pos.value - self.neg.value
 
     def merge(self, other: 'PNCounter'):
         'Merge this replica with another in-place'
         self.pos.merge(other.pos)
         self.neg.merge(other.neg)
-
-    @property
-    def state(self):
-        return self
 
     def __le__(self, other):
         return self.pos <= other.pos and self.neg <= other.neg

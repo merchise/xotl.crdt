@@ -10,6 +10,7 @@ import pickle
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
+from xotl.crdt.base import reconstruct
 from xotl.crdt.counter import GCounter, PNCounter
 
 
@@ -76,7 +77,7 @@ class GCounterComparison(RuleBasedStateMachine):
         senders = [which for which in self.subjects if receiver is not which]
         for sender in senders:
             state = sender.state
-            receiver.merge(state)
+            receiver.merge(reconstruct(state))
         assert receiver.value == self.model.value
 
 
@@ -130,7 +131,7 @@ class PNCounterComparison(RuleBasedStateMachine):
         senders = [which for which in self.subjects if receiver is not which]
         for sender in senders:
             state = sender.state
-            receiver.merge(state)
+            receiver.merge(reconstruct(state))
         assert receiver.value == self.model.value
 
 
