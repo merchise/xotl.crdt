@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+"e1839a8" = {editable = true, path = "."}
+
+[dev-packages]
+sphinx = "*"
+hypothesis = "*"
+mypy = "==0.630"
+
+[requires]
+python_version = "3.6"
