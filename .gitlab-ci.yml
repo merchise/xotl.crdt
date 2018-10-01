@@ -1,6 +1,8 @@
 ---
 stages:
   - pre-check
+  - build doc
+  - publish doc
   - test
   - check
   - build
@@ -137,7 +139,7 @@ publish_pypi:
 
 
 build documentation:
-  stage: build
+  stage: build doc
   script:
     - rm -rf `pipenv --venv`
     - pipenv install --dev --skip-lock
@@ -161,7 +163,7 @@ build documentation:
 publish in our rtd:
   variables:
     GIT_STRATEGY: none
-  stage: publish
+  stage: publish doc
   script:
     - scp $CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2 rtd@docs.lahavane.com:.
     - ssh rtd@docs.lahavane.com mkdir -p $CI_PROJECT_NAME/.$CI_COMMIT_SHA
