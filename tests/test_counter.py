@@ -27,6 +27,9 @@ class ModelCounter:
         return "<ModelCounter: {value}>".format(value=self.value)
 
 
+REPLICA_NODES = list(range(5))
+
+
 class GCounterComparison(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
@@ -34,10 +37,12 @@ class GCounterComparison(RuleBasedStateMachine):
         # what the subject state should be.
         self.model = ModelCounter()
         # TODO: Replace all subjects for replicas of a distributed counter.
-        self.subjects = (GCounter(actor='A'), GCounter(actor='B'))
+        self.subjects = tuple(
+            GCounter(actor=f'R{i}') for i in REPLICA_NODES
+        )
 
     replicas = Bundle('replicas')
-    process_names = st.sampled_from([0, 1])
+    process_names = st.sampled_from(REPLICA_NODES)
 
     @rule(target=replicas, name=process_names)
     def replica(self, name):
@@ -57,12 +62,10 @@ class GCounterComparison(RuleBasedStateMachine):
         # replicas, and the rule command always updates the model counter,
         # which means that after merging, the receiver must have the same
         # value as the model.
-        if self.subjects[0] is not receiver:
-            sender = self.subjects[0]
-        else:
-            sender = self.subjects[1]
-        state = sender.state
-        receiver.merge(state)
+        senders = [which for which in self.subjects if receiver is not which]
+        for sender in senders:
+            state = sender.state
+            receiver.merge(state)
         assert receiver.value == self.model.value
 
 
@@ -76,17 +79,19 @@ class PNCounterComparison(RuleBasedStateMachine):
         # what the subject state should be.
         self.model = ModelCounter()
         # TODO: Replace all subjects for replicas of a distributed counter.
-        self.subjects = (PNCounter(actor='A'), PNCounter(actor='B'))
+        self.subjects = tuple(
+            PNCounter(actor=f'R{i}') for i in REPLICA_NODES
+        )
 
     commands = Bundle('commands')
-    counter_commands = st.sampled_from(['incr', ])
+    counter_commands = st.sampled_from(['incr', 'decr', ])
 
     @rule(target=commands, cmd=counter_commands)
     def command(self, cmd):
         return cmd
 
     replicas = Bundle('replicas')
-    process_names = st.sampled_from([0, 1])
+    process_names = st.sampled_from(REPLICA_NODES)
 
     @rule(target=replicas, name=process_names)
     def replica(self, name):
@@ -109,17 +114,10 @@ class PNCounterComparison(RuleBasedStateMachine):
 
     @rule(receiver=replicas)
     def run_synchronize(self, receiver):
-        # The merge is a "local" operation.  The receiver may alter its the
-        # state, the sender state is unaltered.  But we have only two
-        # replicas, and the rule command always updates the model counter,
-        # which means that after merging, the receiver must have the same
-        # value as the model.
-        if self.subjects[0] is not receiver:
-            sender = self.subjects[0]
-        else:
-            sender = self.subjects[1]
-        state = sender.state
-        receiver.merge(state)
+        senders = [which for which in self.subjects if receiver is not which]
+        for sender in senders:
+            state = sender.state
+            receiver.merge(state)
         assert receiver.value == self.model.value
 
 
