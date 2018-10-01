@@ -10,6 +10,9 @@ name = "pypi"
 sphinx = "*"
 hypothesis = "*"
 mypy = "==0.630"
+"e1839a8" = {editable = true, path = "."}
+ipython = "*"
+ipdb = "*"
 
 [requires]
 python_version = "3.6"
