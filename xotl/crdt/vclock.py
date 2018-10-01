@@ -64,7 +64,7 @@ class Dot:
 
 
 @dataclass(frozen=True, init=False)
-class VectorClock:
+class VClock:
     dots: Tuple[Dot, ...]
 
     def __init__(self, dots: Sequence[Dot] = None) -> None:
@@ -77,14 +77,14 @@ class VectorClock:
             tuple(sorted(dots or [], key=attrgetter('actor')))
         )
 
-    def descends(self, other: 'VectorClock') -> bool:
+    def descends(self, other: 'VClock') -> bool:
         '''True if self descends from other.
 
         Timestamps in dots are irrelevant, the only things that matter are
         actors and counters.
 
         '''
-        if isinstance(other, VectorClock):
+        if isinstance(other, VClock):
             if not other.dots:
                 return True  # Every VC decends from the empty one.
             elif not self.dots:
@@ -111,9 +111,9 @@ class VectorClock:
     def __bool__(self):
         return bool(self.dots)
 
-    def dominates(self, other: 'VectorClock') -> bool:
+    def dominates(self, other: 'VClock') -> bool:
         '''True if self descends from other, but not viceversa.'''
-        if isinstance(other, VectorClock):
+        if isinstance(other, VClock):
             return self >= other and not (other >= self)
         else:
             raise TypeError(f"Invalid type for {other}")
@@ -131,12 +131,12 @@ class VectorClock:
         return other >= self and not (self == other)
 
     def __eq__(self, other):
-        if isinstance(other, VectorClock):
+        if isinstance(other, VClock):
             return self.dots == other.dots
         else:
             return NotImplemented
 
-    def merge(self, *others: 'VectorClock') -> 'VectorClock':
+    def merge(self, *others: 'VClock') -> 'VClock':
         '''Return the least possible common descendant.'''
         from heapq import merge
         get_actor = attrgetter('actor')
@@ -149,7 +149,7 @@ class VectorClock:
             for actor, group in groups
         ]
         # Silly little trick to avoid sorting what is sorted already
-        result = VectorClock()
+        result = VClock()
         object.__setattr__(result, 'dots', tuple(dots))
         return result
 
@@ -167,7 +167,7 @@ class VectorClock:
             from heapq import merge
             new = Dot(actor, 1, monotonic())
             dots = merge(self.dots, [new], key=attrgetter('actor'))
-        result = VectorClock()
+        result = VClock()
         object.__setattr__(result, 'dots', tuple(dots))
         return result
 
