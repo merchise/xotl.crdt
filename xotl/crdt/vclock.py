@@ -59,6 +59,9 @@ class Dot:
         else:
             return NotImplemented
 
+    def __repr__(self):
+        return f'<dot: {self.actor}, {self.counter}, {self.timestamp}>'
+
 
 @dataclass(frozen=True, init=False)
 class VectorClock:
@@ -162,7 +165,7 @@ class VectorClock:
             dots[i] = Dot(actor, dots[i].counter + 1, monotonic())
         except ValueError:
             from heapq import merge
-            new = Dot(actor, 0, monotonic())
+            new = Dot(actor, 1, monotonic())
             dots = merge(self.dots, [new], key=attrgetter('actor'))
         result = VectorClock()
         object.__setattr__(result, 'dots', tuple(dots))
