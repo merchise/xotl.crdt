@@ -9,7 +9,7 @@
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
-from xotl.crdt.cv.counter import Counter
+from xotl.crdt.counter import GCounter
 
 
 class ModelCounter:
@@ -31,7 +31,7 @@ class CounterComparison(RuleBasedStateMachine):
         # what the subject state should be.
         self.model = ModelCounter()
         # TODO: Replace all subjects for replicas of a distributed counter.
-        self.subjects = (Counter('A'), Counter('B'))
+        self.subjects = (GCounter(actor='A'), GCounter(actor='B'))
 
     commands = Bundle('commands')
     counter_commands = st.sampled_from(['incr', ])

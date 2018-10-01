@@ -9,8 +9,8 @@
 from xotl.crdt.vclock import VectorClock
 
 
-class Counter:
-    def __init__(self, actor):
+class GCounter:
+    def __init__(self, *, actor: str):
         self.actor = actor
         self.vc = VectorClock()
 
