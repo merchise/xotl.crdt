@@ -44,12 +44,12 @@ class GCounterComparison(RuleBasedStateMachine):
         )
         self.save_state()
 
-    @rule()
+    # @rule()
     def save_state(self):
         self.data = pickle.dumps((self.model, self.subjects),
                                  pickle.HIGHEST_PROTOCOL)
 
-    @rule()
+    # @rule()
     def load_state(self):
         self.model, self.subjects = pickle.loads(self.data)
 
@@ -69,11 +69,8 @@ class GCounterComparison(RuleBasedStateMachine):
 
     @rule(receiver=replicas)
     def run_synchronize(self, receiver):
-        # The merge is a "local" operation.  The receiver may alter its the
-        # state, the sender state is unaltered.  But we have only two
-        # replicas, and the rule command always updates the model counter,
-        # which means that after merging, the receiver must have the same
-        # value as the model.
+        # Since any incr may have been done in any replica, we need to merge
+        # from all other replicas to actually the get the model value.
         senders = [which for which in self.subjects if receiver is not which]
         for sender in senders:
             state = sender.state
@@ -96,12 +93,12 @@ class PNCounterComparison(RuleBasedStateMachine):
         )
         self.save_state()
 
-    @rule()
+    # @rule()
     def save_state(self):
         self.data = pickle.dumps((self.model, self.subjects),
                                  pickle.HIGHEST_PROTOCOL)
 
-    @rule()
+    # @rule()
     def load_state(self):
         self.model, self.subjects = pickle.loads(self.data)
 
