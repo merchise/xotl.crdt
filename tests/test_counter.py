@@ -6,6 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+import pickle
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
@@ -40,6 +41,16 @@ class GCounterComparison(RuleBasedStateMachine):
         self.subjects = tuple(
             GCounter(actor=f'R{i}') for i in REPLICA_NODES
         )
+        self.save_state()
+
+    @rule()
+    def save_state(self):
+        self.data = pickle.dumps((self.model, self.subjects),
+                                 pickle.HIGHEST_PROTOCOL)
+
+    @rule()
+    def load_state(self):
+        self.model, self.subjects = pickle.loads(self.data)
 
     replicas = Bundle('replicas')
     process_names = st.sampled_from(REPLICA_NODES)
@@ -82,6 +93,16 @@ class PNCounterComparison(RuleBasedStateMachine):
         self.subjects = tuple(
             PNCounter(actor=f'R{i}') for i in REPLICA_NODES
         )
+        self.save_state()
+
+    @rule()
+    def save_state(self):
+        self.data = pickle.dumps((self.model, self.subjects),
+                                 pickle.HIGHEST_PROTOCOL)
+
+    @rule()
+    def load_state(self):
+        self.model, self.subjects = pickle.loads(self.data)
 
     replicas = Bundle('replicas')
     process_names = st.sampled_from(REPLICA_NODES)
