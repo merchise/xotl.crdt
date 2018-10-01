@@ -3,4 +3,4 @@
 ===============================================
 
 .. automodule:: xotl.crdt.vclock
-   :members: VClock
+   :members: VClock, Dot
