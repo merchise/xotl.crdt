@@ -83,13 +83,6 @@ class PNCounterComparison(RuleBasedStateMachine):
             PNCounter(actor=f'R{i}') for i in REPLICA_NODES
         )
 
-    commands = Bundle('commands')
-    counter_commands = st.sampled_from(['incr', 'decr', ])
-
-    @rule(target=commands, cmd=counter_commands)
-    def command(self, cmd):
-        return cmd
-
     replicas = Bundle('replicas')
     process_names = st.sampled_from(REPLICA_NODES)
 
@@ -97,20 +90,19 @@ class PNCounterComparison(RuleBasedStateMachine):
     def replica(self, name):
         return self.subjects[name]
 
-    @rule(cmd=commands, replica=replicas)
-    def run_command(self, cmd, replica):
-        if cmd == 'incr':
-            value = replica.value
-            replica.incr()
-            assert value + 1 == replica.value
-            self.model.incr()
-        elif cmd == 'decr':
-            value = replica.value
-            replica.decr()
-            assert value - 1 == replica.value
-            self.model.decr()
-        else:
-            assert False
+    @rule(replica=replicas)
+    def run_incr(self, replica):
+        value = replica.value
+        replica.incr()
+        assert value + 1 == replica.value
+        self.model.incr()
+
+    @rule(replica=replicas)
+    def run_decr(self, replica):
+        value = replica.value
+        replica.decr()
+        assert value - 1 == replica.value
+        self.model.decr()
 
     @rule(receiver=replicas)
     def run_synchronize(self, receiver):
