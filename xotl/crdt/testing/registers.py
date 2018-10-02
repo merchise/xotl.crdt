@@ -28,7 +28,7 @@ atoms = (
 
 @dataclass
 class Register:
-    value: Any = field(default=None)
+    value: Any = field(default=None)  # type: ignore
 
     def set(self, value):
         self.value = value

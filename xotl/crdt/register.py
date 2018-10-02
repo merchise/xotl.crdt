@@ -18,7 +18,7 @@ class LWWRegister(CvRDT):
     wins.
 
     '''
-    def __init__(self, *, actor: str):
+    def __init__(self, *, actor: str) -> None:
         self.actor = actor
         self.vclock = VClock([Dot(actor, 0, 0)])
         self.atom = None
@@ -28,7 +28,7 @@ class LWWRegister(CvRDT):
         return self.atom
 
     @property
-    def timestamp(self):
+    def timestamp(self) -> float:
         dot = self.vclock.find(self.actor)
         return dot.timestamp
 
@@ -42,7 +42,7 @@ class LWWRegister(CvRDT):
                 self.timestamp <= other.timestamp or
                 self.actor <= other.actor)
 
-    def merge(self, other: 'LWWRegister') -> None:
+    def merge(self, other: 'LWWRegister') -> None:  # type: ignore
         if self <= other:
             self.atom = other.value
         t1, t2 = self.timestamp, other.timestamp

@@ -14,7 +14,7 @@ class GCounter(CvRDT):
     '''A increment-only counter.
 
     '''
-    def __init__(self, *, actor: str):
+    def __init__(self, *, actor: str) -> None:
         self.actor = actor
         self.vclock = VClock()
 
@@ -26,11 +26,11 @@ class GCounter(CvRDT):
         self.vclock = self.vclock.bump(self.actor)
 
     @property
-    def value(self):
+    def value(self) -> int:
         'The current value of the counter'
         return sum(d.counter for d in self.vclock.dots)
 
-    def merge(self, other: 'GCounter'):
+    def merge(self, other: 'GCounter') -> None:  # type: ignore
         'Merge this replica with another in-place'
         self.vclock = self.vclock.merge(other.vclock)
 
@@ -40,7 +40,7 @@ class GCounter(CvRDT):
 
 class PNCounter(CvRDT):
     '''A counter that allows increments and decrements.'''
-    def __init__(self, *, actor: str):
+    def __init__(self, *, actor: str) -> None:
         self.actor = actor
         self.pos = GCounter(actor=actor)
         self.neg = GCounter(actor=actor)
@@ -57,11 +57,11 @@ class PNCounter(CvRDT):
         self.neg.incr()
 
     @property
-    def value(self):
+    def value(self) -> int:
         'The current value of the counter.'
         return self.pos.value - self.neg.value
 
-    def merge(self, other: 'PNCounter'):
+    def merge(self, other: 'PNCounter') -> None:  # type: ignore
         'Merge this replica with another in-place'
         self.pos.merge(other.pos)
         self.neg.merge(other.neg)

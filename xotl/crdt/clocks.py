@@ -23,7 +23,7 @@ class Dot:
     # actor names should be unique across all actors
     actor: str
     counter: int
-    timestamp: int  # this will be the result of monotonic.
+    timestamp: float  # this will be the result of monotonic.
 
     @property
     def core(self):
