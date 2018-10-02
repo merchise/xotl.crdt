@@ -52,12 +52,9 @@ class BaseCRDTMachine(RuleBasedStateMachine):
         for sender in senders:
             state = sender.state
             receiver.merge(reconstruct(state))
+            assert sender <= receiver
         model = self.model
         assert receiver.value == model.value
-        # Don't use assert all(...) to expose the failing 'replica' in the
-        # logs.
-        for replica in self.subjects:
-            assert replica <= receiver
 
     def create_subjects(self, cls):
         '''Return a tuple of instances of `cls`.
