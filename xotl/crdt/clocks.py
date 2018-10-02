@@ -6,7 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-'''Implements the Vector Clocks.
+'''Implements the Vector Clocks and monotonicity.
 
 '''
 from typing import Tuple, Sequence
@@ -145,8 +145,12 @@ class VClock:
             key=get_actor
         )
         dots = [
-            Dot(actor, max(d.counter for d in group), monotonic())
+            Dot(actor,
+                max(d.counter for d in lgroup),
+                max(d.timestamp for d in lgroup))
             for actor, group in groups
+            # convert group to a list so that we can do the double max above
+            for lgroup in (list(group), )
         ]
         # Silly little trick to avoid sorting what is sorted already
         result = VClock()
@@ -157,19 +161,28 @@ class VClock:
         'Return the merge with other.'
         return self.merge(other)
 
-    def bump(self, actor):
+    def bump(self, actor, *, _timestamp=None):
         'Return a new VC with the actor increased'
+        ts = _timestamp or monotonic()
         try:
             i = index(self.dots, actor, key=attrgetter('actor'))
             dots = list(self.dots)
-            dots[i] = Dot(actor, dots[i].counter + 1, monotonic())
+            if _timestamp is None:
+                # We should never go back in time, unless we're told to do so
+                # (but there be dragons).
+                ts = max(ts, dots[i].timestamp)
+            dots[i] = Dot(actor, dots[i].counter + 1, ts)
         except ValueError:
             from heapq import merge
-            new = Dot(actor, 1, monotonic())
+            new = Dot(actor, 1, ts)
             dots = merge(self.dots, [new], key=attrgetter('actor'))
         result = VClock()
         object.__setattr__(result, 'dots', tuple(dots))
         return result
+
+    def find(self, actor) -> Dot:
+        i = index(self.dots, actor, key=attrgetter('actor'))
+        return self.dots[i]
 
 
 def index(a, x, key=None):

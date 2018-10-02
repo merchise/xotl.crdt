@@ -7,7 +7,7 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from xotl.crdt.base import CvRDT
-from xotl.crdt.vclock import VClock
+from xotl.crdt.clocks import VClock
 
 
 class GCounter(CvRDT):
