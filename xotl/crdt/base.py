@@ -51,7 +51,7 @@ class CvRDT:
 
     @classmethod
     def from_state(cls, state) -> 'CvRDT':
-        '''Reconstruct a CvRDT from `state`:prop:.'''
+        '''Reconstruct a CvRDT from `state`:any:.'''
         return state
 
 
