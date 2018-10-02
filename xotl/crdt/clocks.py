@@ -6,58 +6,27 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-'''Implements the Vector Clocks and monotonicity.
+'''Implements the Vector Clocks.
 
 '''
 from typing import Tuple, Sequence
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import groupby
 from operator import attrgetter
 from time import monotonic
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=False, eq=True)
 class Dot:
+    '''A component on the vector clock.
+
+    '''
     # actor names should be unique across all actors
     actor: str
     counter: int
-    timestamp: float  # this will be the result of monotonic.
-
-    @property
-    def core(self):
-        return (self.actor, self.counter)
-
-    def __eq__(self, other):
-        if isinstance(other, Dot):
-            return self.core == other.core
-        else:
-            return NotImplemented
-
-    def __lt__(self, other):
-        if isinstance(other, Dot) and self.actor == other.actor:
-            return self.counter < other.counter
-        else:
-            return NotImplemented
-
-    def __le__(self, other):
-        if isinstance(other, Dot) and self.actor == other.actor:
-            return self.counter <= other.counter
-        else:
-            return NotImplemented
-
-    def __gt__(self, other):
-        if isinstance(other, Dot) and self.actor == other.actor:
-            return self.counter > other.counter
-        else:
-            return NotImplemented
-
-    def __ge__(self, other):
-        if isinstance(other, Dot) and self.actor == other.actor:
-            return self.counter >= other.counter
-        else:
-            return NotImplemented
+    timestamp: float = field(compare=False)  # type: ignore
 
 
 @dataclass(frozen=True, init=False)
