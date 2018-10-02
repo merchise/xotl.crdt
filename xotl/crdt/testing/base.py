@@ -19,7 +19,7 @@ REPLICA_NODES = list(range(5))
 class BaseCRDTMachine(RuleBasedStateMachine):
     '''Base CRDT rule-based state machine.
 
-    It defines the `replica` `~hypothesis.stateful.Bundle`:any: that chooses
+    It defines the `~hypothesis.stateful.Bundle`:class: 'replica' that chooses
     any of the replicas under test.
 
     Also defines the rule `run_synchronize` which receives a replica that will
