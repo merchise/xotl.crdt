@@ -18,8 +18,7 @@ of the subtleties around CRDTs so that we can implement them elsewhere.
    :caption: Contents:
 
    xotl.crdt/*
-   tests/*
-
+   xotl.crdt/testing/*
 
 
 Indices and tables
