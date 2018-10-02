@@ -7,7 +7,7 @@ name = "pypi"
 "e1839a8" = {editable = true, path = "."}
 
 [dev-packages]
-sphinx = "*"
+sphinx = "==1.8.1"
 hypothesis = "*"
 mypy = "==0.630"
 "e1839a8" = {editable = true, path = "."}

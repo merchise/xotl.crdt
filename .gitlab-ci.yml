@@ -142,10 +142,8 @@ build documentation:
   stage: build doc
   script:
     - rm -rf `pipenv --venv`
-    - pipenv install --dev --skip-lock
+    - pipenv install --dev
     - source `pipenv --venv`/bin/activate
-    - pip install sphinx sphinx-rtd-theme
-    - pip install -e .
     - make -C docs/ html
     - cd docs/build/html
     - tar -cjf ../../../$CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2 ./
