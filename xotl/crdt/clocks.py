@@ -59,9 +59,6 @@ class Dot:
         else:
             return NotImplemented
 
-    def __repr__(self):
-        return f'<dot: {self.actor}, {self.counter}, {self.timestamp}>'
-
 
 @dataclass(frozen=True, init=False)
 class VClock:
@@ -95,16 +92,16 @@ class VClock:
             ours = deque(self.dots)
             result = True
             while theirs and ours and result:
-                their_dot = theirs.pop()
-                our_dot = ours.pop()
+                their_dot = theirs.popleft()
+                our_dot = ours.popleft()
                 while ours and their_dot.actor != our_dot.actor:
-                    our_dot = ours.pop()
+                    our_dot = ours.popleft()
                 if our_dot.actor == their_dot.actor:
                     result = our_dot.counter >= their_dot.counter
                 else:
                     assert not ours
                     result = False
-            return result and not theirs and not ours
+            return result and not theirs
         else:
             raise TypeError(f"Invalid type for {other}")
 
@@ -127,8 +124,11 @@ class VClock:
         except TypeError:
             return NotImplemented
 
+    def __gt__(self, other):
+        return self != other and self >= other
+
     def __lt__(self, other):
-        return other >= self and not (self == other)
+        return self != other and self <= other
 
     def __eq__(self, other):
         if isinstance(other, VClock):

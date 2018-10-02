@@ -39,8 +39,6 @@ class ModelCounter:
 class CounterMachine(BaseCRDTMachine):
     def __init__(self):
         super().__init__()
-        # The 'subject' is the thing we're testing, the model keeps track of
-        # what the subject state should be.
         self.model = ModelCounter()
 
     @rule(replica=BaseCRDTMachine.replicas)

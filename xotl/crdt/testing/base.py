@@ -6,6 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+from random import shuffle
 from xotl.crdt.base import reconstruct
 
 from hypothesis import strategies as st
@@ -46,15 +47,17 @@ class BaseCRDTMachine(RuleBasedStateMachine):
         and compares the resulting state with expected state.
 
         '''
-        import random
         senders = [which for which in self.subjects if receiver is not which]
-        random.shuffle(senders)
+        shuffle(senders)
         for sender in senders:
             state = sender.state
             receiver.merge(reconstruct(state))
         model = self.model
         assert receiver.value == model.value
-        assert all(replica <= receiver for replica in self.subjects)
+        # Don't use assert all(...) to expose the failing 'replica' in the
+        # logs.
+        for replica in self.subjects:
+            assert replica <= receiver
 
     def create_subjects(self, cls):
         '''Return a tuple of instances of `cls`.
