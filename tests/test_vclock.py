@@ -25,3 +25,10 @@ def test_descend_regression():
                       Dot(actor='R2', counter=0, timestamp=0)))
     v2 = VClock(dots=(Dot(actor='R1', counter=1, timestamp=0),))
     assert v1 >= v2
+
+
+def test_missing_present_dots_regression():
+    v1 = VClock(dots=(Dot(actor='R0', counter=0, timestamp=0),))
+    v2 = VClock(dots=(Dot(actor='R1', counter=1, timestamp=0),))
+    assert v1 <= v2
+    assert not (v1 >= v2)

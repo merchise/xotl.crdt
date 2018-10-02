@@ -37,11 +37,10 @@ class VClock:
         if dots:
             assert len([d.actor for d in dots]) == len({d.actor for d in dots}), \
                 f'Repeated actors in {dots!r}'
-        object.__setattr__(
-            self,
-            'dots',
-            tuple(sorted(dots or [], key=attrgetter('actor')))
-        )
+        # Avoid silly counters.
+        dots = [d for d in (dots or []) if d.counter >= 0]
+        dots.sort(key=attrgetter('actor'))
+        object.__setattr__(self, 'dots', tuple(dots))
 
     def descends(self, other: 'VClock') -> bool:
         '''True if self descends from other.
@@ -51,14 +50,18 @@ class VClock:
 
         '''
         if isinstance(other, VClock):
-            if not other.dots:
-                return True  # Every VC decends from the empty one.
-            elif not self.dots:
-                return False  # Empty VC doesnt descent from non-empty ones.
             # Remember, that '.dots' are ordered by 'actor'; with this in mind
             # the algorithm is easy to follow.
-            theirs = deque(other.dots)
-            ours = deque(self.dots)
+            #
+            # This algorithm consider missing 'actors' as if they were there
+            # with counter 0.  But, then if any actor is present with counter
+            # 0, we should remove it from the dots.
+            theirs = deque(d for d in other.dots if d.counter)
+            ours = deque(d for d in self.dots if d.counter)
+            if not theirs:
+                return True  # Every VC decends from the empty one.
+            elif not ours:
+                return False  # Empty VC doesnt descent from non-empty ones.
             result = True
             while theirs and ours and result:
                 their_dot = theirs.popleft()
