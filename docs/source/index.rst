@@ -19,6 +19,9 @@ Main reference:
 
    -- Available at https://hal.inria.fr/inria-00555588v1
 
+This package requires Python 3.6+, and has been tested in CPython 3.6 and
+CPython 3.7.
+
 
 .. toctree::
    :glob:
@@ -27,6 +30,7 @@ Main reference:
 
    xotl.crdt/*
    xotl.crdt/testing/*
+   history
 
 
 Indices and tables
