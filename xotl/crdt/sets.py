@@ -102,3 +102,9 @@ class USet(CvRDT):
 
     def __repr__(self):
         return f"<USet: {self.value}; {self.actor}, {self.vclock.simplified}>"
+
+
+class ORSet(CvRDT):  # TODO: Do ORSet
+    '''The Observed-Remove Set.
+
+    '''
