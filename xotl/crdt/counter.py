@@ -19,7 +19,7 @@ class GCounter(CvRDT):
         self.vclock = VClock()
 
     def __repr__(self):
-        return f"<GCounter of {self.value}; in {self.actor} with {self.vclock}>"
+        return f"<GCounter of {self.value}; {self.actor}, {self.vclock.simplified}>"
 
     def incr(self):
         'Increases the counter by one.'

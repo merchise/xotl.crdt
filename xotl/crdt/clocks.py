@@ -179,6 +179,10 @@ class VClock:
         i = index(self.dots, actor, key=attrgetter('actor'))
         return self.dots[i]
 
+    @property
+    def simplified(self):
+        return VClock([d for d in self.dots if d.counter])
+
 
 def index(a, x, key=None):
     'Locate the leftmost value exactly equal to x'

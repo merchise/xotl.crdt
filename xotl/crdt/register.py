@@ -93,4 +93,4 @@ class LWWRegister(CvRDT):
             object.__setattr__(self.dot, 'timestamp', other.timestamp)
 
     def __repr__(self):
-        return f"<LWWRegister: {self.value}; {self.actor}, {self.vclock}>"
+        return f"<LWWRegister: {self.value}; {self.actor}, {self.vclock.simplified}>"
