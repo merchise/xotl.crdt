@@ -7,8 +7,10 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from xotl.crdt.testing.sets import (
-    GSetMachine
+    GSetMachine,
+    TPSetMachine
 )
 
 
 TestGSet = GSetMachine.TestCase
+TestTPSet = TPSetMachine.TestCase

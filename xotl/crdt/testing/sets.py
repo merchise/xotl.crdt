@@ -6,11 +6,14 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from xotl.crdt.sets import GSet
-from xotl.crdt.testing.base import ModelBasedCRDTMachine
+from xotl.crdt.sets import GSet, TwoPhaseSet
+from xotl.crdt.testing.base import (
+    ModelBasedCRDTMachine,
+    SyncBasedCRDTMachine
+)
 
 from hypothesis import strategies as st
-from hypothesis.stateful import rule
+from hypothesis.stateful import rule, Bundle
 
 
 atoms = (
@@ -42,3 +45,23 @@ class GSetMachine(ModelBasedCRDTMachine):
     def add_item(self, replica, item):
         self.model.add(item)
         replica.add(item)
+
+
+class TPSetMachine(SyncBasedCRDTMachine):
+    def __init__(self):
+        super().__init__()
+        self.subjects = self.create_subjects(TwoPhaseSet)
+
+    items = Bundle('items')
+
+    @rule(target=items, value=st.integers())
+    def generate_item(self, value):
+        return value
+
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    def add_item(self, replica, item):
+        replica.add(item)
+
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    def remove_item(self, replica, item):
+        replica.remove(item)
