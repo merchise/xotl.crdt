@@ -155,7 +155,10 @@ class VClock:
 
     def bump(self, actor, *, _timestamp=None):
         'Return a new VC with the actor increased'
-        ts = _timestamp or monotonic()
+        if _timestamp is None:
+            ts = monotonic()
+        else:
+            ts = _timestamp
         try:
             i = index(self.dots, actor, key=attrgetter('actor'))
             dots = list(self.dots)
