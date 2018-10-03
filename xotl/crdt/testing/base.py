@@ -6,6 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+from copy import deepcopy
 from random import shuffle
 from xotl.crdt.base import reconstruct
 
@@ -49,12 +50,15 @@ class BaseCRDTMachine(RuleBasedStateMachine):
         '''
         senders = [which for which in self.subjects if receiver is not which]
         shuffle(senders)
+        before_merge = []
         for sender in senders:
             state = sender.state
+            before_merge.append(deepcopy(receiver))
             receiver.merge(reconstruct(state))
             assert sender <= receiver
         model = self.model
-        assert receiver.value == model.value
+        assert receiver.value == model.value, \
+            f"{receiver.value} != {model.value}"
 
     def create_subjects(self, cls):
         '''Return a tuple of instances of `cls`.
