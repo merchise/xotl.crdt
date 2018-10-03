@@ -126,3 +126,9 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
         assert all(r.value == s.value for r, s in product(replicas, replicas))
         print(f'Agreement reached: {first.value}')
         assert all(r <= s <= r for r, s in product(replicas, replicas))
+
+    def teardown(self):
+        # Most likely, subclasses won't make checks; so let's perform a last
+        # sync before finishing.
+        self.run_synchronize()
+        super().teardown()
