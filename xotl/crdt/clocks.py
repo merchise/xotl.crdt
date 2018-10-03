@@ -42,20 +42,14 @@ class VClock:
         dots.sort(key=attrgetter('actor'))
         object.__setattr__(self, 'dots', tuple(dots))
 
-    def descends(self, other: 'VClock') -> bool:
-        '''True if self descends from other.
-
-        Timestamps in dots are irrelevant, the only things that matter are
-        actors and counters.
-
-        '''
+    def __ge__(self, other: 'VClock') -> bool:
         if isinstance(other, VClock):
-            # Remember, that '.dots' are ordered by 'actor'; with this in mind
-            # the algorithm is easy to follow.
+            # Remember, that '.dots' are ordered by 'actor'; with this in
+            # mind the algorithm is easy to follow.
             #
-            # This algorithm consider missing 'actors' as if they were there
-            # with counter 0.  But, then if any actor is present with counter
-            # 0, we should remove it from the dots.
+            # This algorithm consider missing 'actors' as if they were
+            # there with counter 0.  But, then if any actor is present
+            # with counter 0, we should remove it from the dots.
             theirs = deque(d for d in other.dots if d.counter)
             ours = deque(d for d in self.dots if d.counter)
             if not theirs:
@@ -75,38 +69,53 @@ class VClock:
                     result = False
             return result and not theirs
         else:
-            raise TypeError(f"Invalid type for {other}")
+            return NotImplemented
+
+    def __eq__(self, other: 'VClock') -> bool:  # type: ignore
+        '''True if this vclock is the same as other.'''
+        if isinstance(other, VClock):
+            # The looping structure is similar to __ge__; however, we must
+            # ensure every actor present in `self` is also present in `other`
+            # with the same counter, thus the stronger conditional in the
+            # 'return'.  This is faster than ``self >= other >= self``.
+            theirs = deque(d for d in other.dots if d.counter)
+            ours = deque(d for d in self.dots if d.counter)
+            result = True
+            while theirs and ours and result:
+                their_dot = theirs.popleft()
+                our_dot = ours.popleft()
+                while ours and their_dot.actor != our_dot.actor:
+                    our_dot = ours.popleft()
+                if our_dot.actor == their_dot.actor:
+                    result = our_dot.counter == their_dot.counter
+                else:
+                    assert not ours
+                    result = False
+            return result and not ours and not theirs
+        else:
+            return NotImplemented
+
+    def __le__(self, other: 'VClock') -> bool:
+        return other >= self
+
+    def __gt__(self, other):
+        '''True if ``self >= other`` but not viceversa.'''
+        if isinstance(other, VClock):
+            # Is this the same as 'self != other and self >= other'?
+            return not (other >= self) and self >= other
+        else:
+            return NotImplemented
+
+    def __lt__(self, other):
+        '''True if ``self <= other`` but not viceversa.'''
+        if isinstance(other, VClock):
+            # Is this the same as 'self != other and self <= other'?
+            return not (other <= self) and self <= other
+        else:
+            return NotImplemented
 
     def __bool__(self):
         return bool(self.dots)
-
-    def dominates(self, other: 'VClock') -> bool:
-        '''True if self descends from other, but not viceversa.'''
-        if isinstance(other, VClock):
-            return self >= other and not (other >= self)
-        else:
-            raise TypeError(f"Invalid type for {other}")
-
-    def __le__(self, other):
-        return other >= self
-
-    def __ge__(self, other):
-        try:
-            return self.descends(other)
-        except TypeError:
-            return NotImplemented
-
-    def __gt__(self, other):
-        return self != other and self >= other
-
-    def __lt__(self, other):
-        return self != other and self <= other
-
-    def __eq__(self, other):
-        if isinstance(other, VClock):
-            return self.dots == other.dots
-        else:
-            return NotImplemented
 
     def merge(self, *others: 'VClock') -> 'VClock':
         '''Return the least possible common descendant.'''
