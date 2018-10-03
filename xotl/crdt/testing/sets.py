@@ -129,14 +129,26 @@ class ORSetMachine(SyncBasedCRDTMachine):
         assume(not item.already_added)
         print(f'Adding item {item} in replica {replica}')
         replica.add(item)
-        item.already_added = True
 
     @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
     def remove_item(self, replica, item):
         print(f'Remove item {item}; if present in {replica}')
-        item.already_removed = item in replica.value
         replica.remove(item)
         print(f'       Result: {replica}')
+
+    @rule(replica1=SyncBasedCRDTMachine.replicas,
+          replica2=SyncBasedCRDTMachine.replicas,
+          item=items)
+    def simulate_concurrent_add_remove(self, replica1, replica2, item):
+        assume(replica1 is not replica2)
+        self.run_synchronize()
+        replica1.add(item)
+        replica2.remove(item)
+        self.run_synchronize()
+        assert item in replica1.value, \
+            f"{item} not in {replica1}"
+        assert item in replica2.value, \
+            f"{item} not in {replica1}"
 
     def teardown(self):
         super().teardown()
