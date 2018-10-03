@@ -16,7 +16,7 @@ from xotl.crdt.testing.base import (
 )
 from xotl.crdt.clocks import monotonic
 
-from hypothesis import strategies as st, settings, Verbosity
+from hypothesis import strategies as st
 from hypothesis.stateful import rule
 
 
