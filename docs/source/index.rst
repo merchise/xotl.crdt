@@ -11,6 +11,14 @@ We implement several CRDTs in Python.  Those implementations are prototypical,
 meaning we don't intend them to be production-code, but to allow exploration
 of the subtleties around CRDTs so that we can implement them elsewhere.
 
+Main reference:
+
+   Marc Shapiro, Nuno Preguiça, Carlos Baquero, and Marek Zawirski.  'A
+   comprehensive study of Convergent and Commutative Replicated Data Types';
+   [Research Report] RR-7506, 2011, pp.50. <inria-00555588>.
+
+   -- Available at https://hal.inria.fr/inria-00555588v1
+
 
 .. toctree::
    :glob:
