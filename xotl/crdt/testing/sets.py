@@ -9,7 +9,7 @@
 from typing import Any
 from dataclasses import dataclass, field
 
-from xotl.crdt.sets import GSet, TwoPhaseSet, USet
+from xotl.crdt.sets import GSet, TwoPhaseSet, USet, ORSet
 from xotl.crdt.testing.base import (
     ModelBasedCRDTMachine,
     SyncBasedCRDTMachine
@@ -110,3 +110,34 @@ class USetMachine(SyncBasedCRDTMachine):
     def teardown(self):
         super().teardown()
         print('------------ End USet case -------------')
+
+
+class ORSetMachine(SyncBasedCRDTMachine):
+    def __init__(self):
+        super().__init__()
+        self.subjects = self.create_subjects(ORSet)
+        print('************ New ORSet case *************')
+
+    items = Bundle('items')
+
+    @rule(target=items, value=st.integers(min_value=0))
+    def generate_item(self, value):
+        return Item(payload=value)
+
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    def add_item(self, replica, item):
+        assume(not item.already_added)
+        print(f'Adding item {item} in replica {replica}')
+        replica.add(item)
+        item.already_added = True
+
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    def remove_item(self, replica, item):
+        print(f'Remove item {item}; if present in {replica}')
+        item.already_removed = item in replica.value
+        replica.remove(item)
+        print(f'       Result: {replica}')
+
+    def teardown(self):
+        super().teardown()
+        print('------------ End ORSet case -------------')

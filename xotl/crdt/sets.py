@@ -7,7 +7,7 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from xotl.crdt.base import CvRDT
-from xotl.crdt.clocks import VClock
+from xotl.crdt.clocks import VClock, Dot
 
 
 class GSet(CvRDT):
@@ -104,7 +104,49 @@ class USet(CvRDT):
         return f"<USet: {self.value}; {self.actor}, {self.vclock.simplified}>"
 
 
-class ORSet(CvRDT):  # TODO: Do ORSet
+class ORSet(CvRDT):
     '''The Observed-Remove Set.
 
     '''
+    def __init__(self, *, actor) -> None:
+        self.actor = actor
+        self.items = USet(actor=actor)
+        self.ticks = 0
+
+    def __le__(self, other: 'ORSet') -> bool:
+        return self.items <= other.items
+
+    def merge(self, other: 'ORSet') -> None:  # type: ignore
+        self.items.merge(other.items)
+
+    @property
+    def value(self):
+        return frozenset(item for item, _, _ in self.items.value)
+
+    @property
+    def dot(self) -> Dot:
+        return self.items.vclock.find(self.actor)
+
+    @property
+    def dot_counter(self) -> int:
+        try:
+            return self.dot.counter
+        except ValueError:
+            return 0
+
+    def add(self, item):
+        # USet requires unique items, we expect the actors are unique in the
+        # cluster and each have an ever increasing tick.
+        self.ticks += 1
+        x = (item, self.actor, self.ticks)
+        self.items.add(x)
+
+    def remove(self, item):
+        xs = [x for x in self.items.value if x[0] == item]
+        if xs:
+            # I have to hack the internal VClock of 'self.items' to ensure
+            # just a single bump.
+            counter = self.dot_counter
+            for x in xs:
+                self.items.remove(x)
+            object.__setattr__(self.dot, 'counter', counter + 1)

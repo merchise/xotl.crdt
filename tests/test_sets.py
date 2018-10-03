@@ -10,9 +10,11 @@ from xotl.crdt.testing.sets import (
     GSetMachine,
     TPSetMachine,
     USetMachine,
+    ORSetMachine,
 )
 
 
 TestGSet = GSetMachine.TestCase
 TestTPSet = TPSetMachine.TestCase
 TestUSet = USetMachine.TestCase
+TestORset = ORSetMachine.TestCase
