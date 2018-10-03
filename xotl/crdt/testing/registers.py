@@ -27,6 +27,9 @@ atoms = (
     st.floats(allow_nan=False)
 )
 
+molecules = st.tuples(atoms)
+values = atoms | molecules
+
 
 # I'm splitting the concurrent from the non-concurrent machinery.  Because
 # using a strictly monotonic time function allows for this simple test-model:
@@ -107,7 +110,7 @@ class LWWRegisterMachine(ModelBasedCRDTMachine):
         self.model = Register()
         self.subjects = self.create_subjects(LWWRegister)
 
-    @rule(replica=ModelBasedCRDTMachine.replicas, value=atoms)
+    @rule(replica=ModelBasedCRDTMachine.replicas, value=values)
     def run_set(self, replica, value):
         '''Set `value` in a single replica.'''
         replica.set(value)
@@ -125,7 +128,7 @@ class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
         self.subjects = self.create_subjects(LWWRegister)
         print('**************** New case ********************')
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, value=atoms)
+    @rule(replica=SyncBasedCRDTMachine.replicas, value=values)
     def run_possibly_concurrent_set(self, replica, value):
         '''Set value at a replica at the current time.
 
@@ -142,6 +145,8 @@ class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
     def tick(self):
         'Increase the current timer by 1.'
         self.time += 1
+        print(f'Tick {self.time - 1} -> {self.time}')
+
 
     def teardown(self):
         print('---------------- End case --------------------')
