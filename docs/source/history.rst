@@ -5,6 +5,12 @@
 Series 0.x
 ==========
 
+2018-10-03.  Release 0.1.1
+--------------------------
+
+Correct distribution files.  No source changes.
+
+
 2018-10-03.  Release 0.1.0
 --------------------------
 
