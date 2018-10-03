@@ -22,7 +22,7 @@ class GSet(CvRDT):
     def __le__(self, other: 'GSet') -> bool:
         return self.value <= other.value
 
-    def merge(self, other: 'GSet') -> None:
+    def merge(self, other: 'GSet') -> None:  # type: ignore
         self.items |= other.value
 
     def add(self, item):
@@ -43,7 +43,7 @@ class TwoPhaseSet(CvRDT):
         return (self.living.value <= other.living.value or
                 self.dead.value <= other.dead.value)
 
-    def merge(self, other: 'TwoPhaseSet') -> None:
+    def merge(self, other: 'TwoPhaseSet') -> None:  # type: ignore
         self.living.items |= other.living.items
         self.dead.items |= other.dead.items
 
@@ -70,10 +70,10 @@ class USet(CvRDT):
     def value(self):
         return frozenset(self.items)
 
-    def __le__(self, other: 'TwoPhaseSet') -> bool:
+    def __le__(self, other: 'USet') -> bool:
         return self.vclock <= other.vclock
 
-    def merge(self, other: 'TwoPhaseSet') -> None:
+    def merge(self, other: 'USet') -> None:  # type: ignore
         if self.vclock >= other.vclock:
             # Our history contains all of others so we can stay the same.
             pass

@@ -147,7 +147,6 @@ class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
         self.time += 1
         print(f'Tick {self.time - 1} -> {self.time}')
 
-
     def teardown(self):
         print('---------------- End case --------------------')
         super().teardown()
