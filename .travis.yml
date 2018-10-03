@@ -1,0 +1,10 @@
+language: python
+python:
+  - 3.6
+  - 3.7
+  - pypy3
+env:
+  - TOX_ENV=unit
+
+install: pip install tox
+script: tox -e system-$TOX_ENV
