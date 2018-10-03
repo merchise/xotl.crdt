@@ -59,8 +59,12 @@ class TwoPhaseSet(CvRDT):
 
 
 class USet(CvRDT):
-    # You must be careful using this directly.  You MUST never add the same
-    # item twice.  I'm implementing this as way to implement the ORSet.
+    '''The USet.
+
+    .. warning:: You must be careful using this directly.  You MUST never add
+       the same item twice.  This as way to implement the `ORSet`:class:.
+
+    '''
     def __init__(self, *, actor):
         self.actor = actor
         self.vclock = VClock()
@@ -92,10 +96,16 @@ class USet(CvRDT):
             assert False
 
     def add(self, item) -> None:
+        '''Add `item` to the set.'''
         self.vclock = self.vclock.bump(self.actor)
         self.items.add(item)
 
     def remove(self, item) -> None:
+        '''Remove `item` to the set.
+
+        If `item` is not in the (at this replica) nothing happens.
+
+        '''
         if item in self.items:
             self.vclock = self.vclock.bump(self.actor)
             self.items.remove(item)
@@ -135,6 +145,9 @@ class ORSet(CvRDT):
             return 0
 
     def add(self, item):
+        '''Add `item` to the set.
+
+        '''
         # USet requires unique items, we expect the actors are unique in the
         # cluster and each have an ever increasing tick.
         self.ticks += 1
@@ -142,6 +155,13 @@ class ORSet(CvRDT):
         self.items.add(x)
 
     def remove(self, item):
+        '''Remove `item` from the set.
+
+        We remove the observed instances of `item` in this replica.  This
+        means that an ``add(x)`` at one replica concurrent with a
+        ``remove(x)`` at another, will result in the item being kept.
+
+        '''
         xs = [x for x in self.items.value if x[0] == item]
         if xs:
             # I have to hack the internal VClock of 'self.items' to ensure
@@ -150,3 +170,6 @@ class ORSet(CvRDT):
             for x in xs:
                 self.items.remove(x)
             object.__setattr__(self.dot, 'counter', counter + 1)
+
+    def __repr__(self):
+        return f"<ORSet: {self.value}; {self.actor}, {self.items}>"
