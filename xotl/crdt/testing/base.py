@@ -14,7 +14,7 @@ from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 
-REPLICA_NODES = list(range(5))
+REPLICA_NODES = list(range(3))
 
 
 class BaseCRDTMachine(RuleBasedStateMachine):
