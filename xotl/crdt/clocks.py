@@ -43,6 +43,7 @@ class VClock:
         object.__setattr__(self, 'dots', tuple(dots))
 
     def __ge__(self, other: 'VClock') -> bool:
+        '''True if this vclock descends (happens after) from other.'''
         if isinstance(other, VClock):
             # Remember, that '.dots' are ordered by 'actor'; with this in
             # mind the algorithm is easy to follow.
@@ -94,6 +95,16 @@ class VClock:
             return result and not ours and not theirs
         else:
             return NotImplemented
+
+    def __floordiv__(self, other: 'VClock') -> bool:
+        '''True if neither self descends from other nor other from self.
+
+        This means that self and other represent concurrent events in
+        different replicas.  In some texts this is represented as ``a || b``,
+        here we have ``a // b``.
+
+        '''
+        return not (self <= other) and not (other <= self)
 
     def __le__(self, other: 'VClock') -> bool:
         return other >= self

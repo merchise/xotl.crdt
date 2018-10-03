@@ -46,3 +46,10 @@ def test_eq_of_empties1():
     assert v1 == v2
     assert v2 <= v1
     assert v1 <= v2
+
+
+def test_concurrence():
+    v1 = VClock(dots=(Dot(actor='R0', counter=1, timestamp=0),))
+    v2 = VClock(dots=(Dot(actor='R1', counter=1, timestamp=0),))
+
+    assert v1 // v2 and v2 // v1
