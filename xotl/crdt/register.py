@@ -7,7 +7,7 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from xotl.crdt.base import CvRDT
-from xotl.crdt.clocks import VClock, Dot
+from xotl.crdt.clocks import VClock, Dot, monotonic
 
 
 class LWWRegister(CvRDT):
@@ -28,29 +28,69 @@ class LWWRegister(CvRDT):
         return self.atom
 
     @property
+    def dot(self) -> Dot:
+        return self.vclock.find(self.actor)
+
+    @property
     def timestamp(self) -> float:
-        dot = self.vclock.find(self.actor)
-        return dot.timestamp
+        return self.dot.timestamp
 
     def set(self, value, *, _timestamp=None):
         hash(value)  # Check is immutable; mutable objs should raise an error
-        self.vclock = self.vclock.bump(self.actor, _timestamp=_timestamp)
+        if _timestamp is None:
+            ts = max(self.dot.timestamp, monotonic())
+        else:
+            ts = _timestamp
+        self.vclock = self.vclock.bump(self.actor, _timestamp=ts)
         self.atom = value
 
     def __le__(self, other: 'LWWRegister') -> bool:
-        return (self.vclock <= other.vclock or
-                self.timestamp <= other.timestamp or
-                self.actor <= other.actor)
+        return self.vclock <= other.vclock
+
+    def __lt__(self, other: 'LWWRegister') -> bool:
+        return self.vclock < other.vclock
+
+    def __gt__(self, other: 'LWWRegister') -> bool:
+        return self.vclock > other.vclock
+
+    def __ge__(self, other: 'LWWRegister') -> bool:
+        return self.vclock >= other.vclock
+
+    def __floordiv__(self, other: 'LWWRegister') -> bool:
+        return self.vclock // other.vclock
+
+    def __lshift__(self, other: 'LWWRegister') -> bool:
+        '''True is `other` wins.
+
+        `other` wins if:
+
+        - its vector clock dominates ours (it descends from ours and knows
+          even more than we do).
+
+        - its vector clock is concurrent with ours but it's marked with a
+          higher timestamp.
+
+        '''
+        if self.vclock < other.vclock:
+            return True
+        elif self.vclock // other.vclock or self.vclock == self.vclock:
+            if self.timestamp < other.timestamp:
+                return True
+            elif self.timestamp > other.timestamp:
+                return False
+            else:
+                return self.actor < other.actor
+        else:
+            assert self.vclock > other.vclock
+            return False
 
     def merge(self, other: 'LWWRegister') -> None:  # type: ignore
-        if self <= other:
+        self.vclock += other.vclock
+        if self << other:
             self.atom = other.value
-        t1, t2 = self.timestamp, other.timestamp
-        self.vclock = self.vclock.merge(other.vclock)
-        # I need to trick the vclock to update the timestamp of the selected
-        # winning node.
-        dot = self.vclock.find(self.actor)
-        object.__setattr__(dot, 'timestamp', max(t1, t2))
+            # I need to trick the vclock to update the timestamp of the
+            # winning node.
+            object.__setattr__(self.dot, 'timestamp', other.timestamp)
 
     def __repr__(self):
-        return f"<LWWRegister: {self.value}; {self.vclock}>"
+        return f"<LWWRegister: {self.value}; {self.actor}, {self.vclock}>"

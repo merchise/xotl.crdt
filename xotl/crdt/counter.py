@@ -32,7 +32,7 @@ class GCounter(CvRDT):
 
     def merge(self, other: 'GCounter') -> None:  # type: ignore
         'Merge this replica with another in-place'
-        self.vclock = self.vclock.merge(other.vclock)
+        self.vclock += other.vclock
 
     def __le__(self, other):
         return self.vclock <= other.vclock
