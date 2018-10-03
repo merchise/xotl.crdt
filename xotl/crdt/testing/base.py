@@ -8,28 +8,25 @@
 #
 from copy import deepcopy
 from random import shuffle
+from xoutil.future.itertools import continuously_slides as slide, product
+
 from xotl.crdt.base import reconstruct
 
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 
-REPLICA_NODES = list(range(3))
+REPLICA_NODES = list(range(5))
 
 
 class BaseCRDTMachine(RuleBasedStateMachine):
-    '''Base CRDT rule-based state machine.
+    '''Base CRDT machine.
 
     It defines the `~hypothesis.stateful.Bundle`:class: 'replica' that chooses
-    any of the replicas under test.
+    any of the replicas under test.  It doesn't perform any assertions.
 
-    Also defines the rule `run_synchronize` which receives a replica that will
-    receive the state of all other replicas merge it with its own state and
-    compare its value with model's value.
-
-    Subclasses must implement an ``__init__`` that sets attributes ``model``
-    and ``subjects``.  You may build the subjects with method
-    `create_subjects`:meth:.
+    See subclasses `ModelBasedCRDTMachine`:class: and
+    `SyncBasedCRDTMachine`:class:.
 
     '''
     replicas = Bundle('replicas')
@@ -39,7 +36,32 @@ class BaseCRDTMachine(RuleBasedStateMachine):
     def replica(self, name):
         return self.subjects[name]
 
-    @rule(receiver=replicas)
+    def create_subjects(self, cls):
+        '''Return a tuple of instances of `cls`.
+
+        :param cls: a callable that takes keyword argument 'actor' and returns
+                    a replica object.
+
+        :returns: a tuple containing the result of several calls to `cls` with
+                  different actor names.
+
+        '''
+        return tuple(cls(actor=f'R{i}') for i in REPLICA_NODES)
+
+
+class ModelBasedCRDTMachine(BaseCRDTMachine):
+    '''Model based CRDT rule-based state machine.
+
+    Defines the rule `run_synchronize` which receives a replica that will
+    receive the state of all other replicas merge it with its own state and
+    compare its value with model's value.
+
+    Subclasses must implement an ``__init__`` that sets attributes ``model``
+    and ``subjects``.  You may build the subjects with method
+    `~BaseCRDTMachine.create_subjects`:meth:.
+
+    '''
+    @rule(receiver=BaseCRDTMachine.replicas)
     def run_synchronize(self, receiver):
         '''Command that synchronizes `receiver`.
 
@@ -60,14 +82,47 @@ class BaseCRDTMachine(RuleBasedStateMachine):
         assert receiver.value == model.value, \
             f"{receiver.value} != {model.value}"
 
-    def create_subjects(self, cls):
-        '''Return a tuple of instances of `cls`.
 
-        :param cls: a callable that takes keyword argument 'actor' and returns
-                    a replica object.
+class SyncBasedCRDTMachine(BaseCRDTMachine):
+    '''Synchronization based state machine.
 
-        :returns: a tuple containing the result of several calls to `cls` with
-                  different actor names.
+    Subclasses must implement an ``__init__`` the to the attributes
+    ``subjects``.  You may build the subjects with method
+    `~BaseCRDTMachine.create_subjects`:meth:.
+
+    '''
+    @rule()
+    def run_synchronize(self):
+        '''Synchronize all replicas and test they reach a consistent value.
+
+        All replicas are *randomly* placed in a line::
+
+             R1  R3  R0  R2
+
+        We transmit the state from the first to the second (``R1 -> R3``),
+        then the second to the third (``R3 -> R0``), and so on.  Afterwards,
+        we go backwards (``R2 -> R0 ...``) in a second pass.
+
+        When the dust is settled we check all replicas have agreed in the
+        final value, and that for any pair of replicas `a` and `b`, ``a <= b
+        <= a`` is True.
+
+        Notice that there are replicas who never exchange messages; yet they
+        must have reached the same conclusion.
 
         '''
-        return tuple(cls(actor=f'R{i}') for i in REPLICA_NODES)
+        replicas = [which for which in self.subjects]
+        shuffle(replicas)
+        before = deepcopy(replicas)  # noqa
+        for sender, receiver in slide(replicas):
+            state = sender.state
+            receiver.merge(reconstruct(state))
+            assert sender <= receiver
+        for sender, receiver in slide(reversed(replicas)):
+            state = sender.state
+            receiver.merge(reconstruct(state))
+            assert sender <= receiver
+        first = replicas[0]
+        assert all(r.value == s.value for r, s in product(replicas, replicas))
+        print(f'Agreement reached: {first.value}')
+        assert all(r <= s <= r for r, s in product(replicas, replicas))

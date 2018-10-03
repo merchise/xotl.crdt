@@ -5,10 +5,17 @@
 .. module:: xotl.crdt.testing.registers
 
 
-.. class:: LWWRegisterMachine
+.. autoclass:: LWWRegisterMachine
 
    .. automethod:: run_set
 
-   .. automethod:: run_set_concurrently
+   .. automethod:: run_synchronize
+
+
+.. autoclass:: LWWRegisterConcurrentMachine
+
+   .. automethod:: run_possibly_concurrent_set
+
+   .. automethod:: tick
 
    .. automethod:: run_synchronize

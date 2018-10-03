@@ -7,7 +7,7 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from xotl.crdt.counter import GCounter, PNCounter
-from xotl.crdt.testing.base import BaseCRDTMachine
+from xotl.crdt.testing.base import ModelBasedCRDTMachine
 
 from hypothesis.stateful import rule
 
@@ -36,12 +36,12 @@ class ModelCounter:
         return "<ModelCounter: {value}>".format(value=self.value)
 
 
-class CounterMachine(BaseCRDTMachine):
+class CounterMachine(ModelBasedCRDTMachine):
     def __init__(self):
         super().__init__()
         self.model = ModelCounter()
 
-    @rule(replica=BaseCRDTMachine.replicas)
+    @rule(replica=ModelBasedCRDTMachine.replicas)
     def run_incr(self, replica):
         '''Increment the value of a single random `replica`.
 
@@ -65,7 +65,7 @@ class PNCounterMachine(CounterMachine):
         super().__init__()
         self.subjects = self.create_subjects(PNCounter)
 
-    @rule(replica=BaseCRDTMachine.replicas)
+    @rule(replica=ModelBasedCRDTMachine.replicas)
     def run_decr(self, replica):
         '''Decrement the value of a single random `replica`.
 

@@ -10,17 +10,19 @@ from typing import Any
 from dataclasses import dataclass, field
 
 from xotl.crdt.register import LWWRegister
-from xotl.crdt.testing.base import BaseCRDTMachine
+from xotl.crdt.testing.base import (
+    ModelBasedCRDTMachine,
+    SyncBasedCRDTMachine
+)
 from xotl.crdt.clocks import monotonic
 
-from hypothesis import strategies as st, assume
+from hypothesis import strategies as st, settings, Verbosity
 from hypothesis.stateful import rule
 
 
 atoms = (
     st.integers() |
     st.booleans() |
-    st.text() |
     # float('nan') == float('nan') is False
     st.floats(allow_nan=False)
 )
@@ -37,17 +39,21 @@ atoms = (
 # though the vector clocks of the replicas are concurrent ([1, 0] and [0, 1])
 # their timestamp makes Replica 2 a winner.
 #
-# The problem happens with:
+# The problem happens with the following:
 #
-#     Time     Replica 1      Replica 2  ...     Model
-#     1        set to x       set to y           ?
+#    Time   R0           R1           R2           Model
+#    0      set to 1                               1
+#    0                   set to 2                  2
 #
-# What is the right value for Model?  Worst yet with three replicas:
+# At this moment synchronize R2 merging R0 first: 'R2 << R1' is True because
+# R2's vclock is empty.  But after the merge, R2's is concurrent with R1 and
+# 'R1 << R2' so the value of R1 is discarded; R2 keeps the value 1 (doesn't
+# agree with Model) but R2 is now a descedant of R1 and R0.
 #
-#     Time     Replica 1      Replica 2   Replica 3     Model
-#     1        set to x       set to y                  ?
-#     2                       set to z    set to a      ?
+# If we now merge R1 with R2 it will adjust it's value to 1.
 #
+# So I think, the way to test LWWRegister is to perform a full-synchronization
+# and test that all replicas reached the same value.
 
 
 @dataclass
@@ -85,16 +91,7 @@ class Register:
         return False
 
 
-class BaseLWWRegisterMachine(BaseCRDTMachine):
-    def __init__(self):
-        super().__init__()
-        # The 'subject' is the thing we're testing, the model keeps track of
-        # what the subject state should be.
-        self.model = Register()
-        self.subjects = self.create_subjects(LWWRegister)
-
-
-class LWWRegisterMachine(BaseLWWRegisterMachine):
+class LWWRegisterMachine(ModelBasedCRDTMachine):
     '''A simple LWWRegister stateful test machine.
 
     Since we run tests in a single process, each call to `run_set`:meth:
@@ -105,7 +102,12 @@ class LWWRegisterMachine(BaseLWWRegisterMachine):
     concurrent and conflicting updates.
 
     '''
-    @rule(replica=BaseCRDTMachine.replicas, value=atoms)
+    def __init__(self):
+        super().__init__()
+        self.model = Register()
+        self.subjects = self.create_subjects(LWWRegister)
+
+    @rule(replica=ModelBasedCRDTMachine.replicas, value=atoms)
     def run_set(self, replica, value):
         '''Set `value` in a single replica.'''
         replica.set(value)
@@ -113,25 +115,34 @@ class LWWRegisterMachine(BaseLWWRegisterMachine):
         self.model.set(value)
 
 
-class LWWRegisterConcurrentMachine(BaseLWWRegisterMachine):
+class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
     '''A concurrent LWWRegister stateful test machine.
 
     '''
     def __init__(self):
         super().__init__()
         self.time = 0
+        self.subjects = self.create_subjects(LWWRegister)
+        print('**************** New case ********************')
 
-    @rule(replica=BaseCRDTMachine.replicas, value=atoms)
+    @rule(replica=SyncBasedCRDTMachine.replicas, value=atoms)
     def run_possibly_concurrent_set(self, replica, value):
-        '''Set two different values in two replicas at the same time.
+        '''Set value at a replica at the current time.
 
-        In order to ensure that the replicas truly diverge at `set`, we call
-        `run_synchronize`:meth: on both replicas before setting the new value.
+        Current time is only increased by calling `tick`:meth:.
+
+        Notice that two consecutive calls with different replicas and values
+        result in a (temporary) divergence of the replicas.
 
         '''
-        if self.model.set(value, timestamp=self.time, actor=replica.actor):
-            replica.set(value, _timestamp=self.time)
+        print(f'Set value {value} at replica {replica.actor} at {self.time}')
+        replica.set(value, _timestamp=self.time)
 
     @rule()
     def tick(self):
+        'Increase the current timer by 1.'
         self.time += 1
+
+    def teardown(self):
+        print('---------------- End case --------------------')
+        super().teardown()
