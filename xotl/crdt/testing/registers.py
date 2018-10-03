@@ -66,6 +66,8 @@ class Register:
         recorded timestamp; or the timestamp is the same but the actor is
         greater.
 
+        Return True if the value was updated.
+
         '''
         if timestamp is None:
             timestamp = monotonic()
@@ -73,10 +75,14 @@ class Register:
             self.value = value
             self.timestamp = timestamp
             self.actor = actor
-        elif timestamp == self.timestamp and (not self.actor or actor > self.actor):
-            self.value = value
-            self.timestamp = timestamp
-            self.actor = actor
+            return True
+        elif timestamp == self.timestamp:
+            if self.actor is None or actor > self.actor:
+                self.value = value
+                self.timestamp = timestamp
+                self.actor = actor
+                return True
+        return False
 
 
 class BaseLWWRegisterMachine(BaseCRDTMachine):
@@ -115,42 +121,17 @@ class LWWRegisterConcurrentMachine(BaseLWWRegisterMachine):
         super().__init__()
         self.time = 0
 
-    @rule(replica1=BaseCRDTMachine.replicas, replica2=BaseCRDTMachine.replicas,
-          value1=atoms, value2=atoms)
-    def run_set_concurrently(self, replica1, replica2, value1, value2):
+    @rule(replica=BaseCRDTMachine.replicas, value=atoms)
+    def run_possibly_concurrent_set(self, replica, value):
         '''Set two different values in two replicas at the same time.
 
         In order to ensure that the replicas truly diverge at `set`, we call
         `run_synchronize`:meth: on both replicas before setting the new value.
 
         '''
-        assume(replica1 is not replica2 and value1 != value2)
-        self.run_synchronize(replica1)
-        self.run_synchronize(replica2)
-        assert replica1.vclock <= replica2.vclock <= replica1.vclock
+        if self.model.set(value, timestamp=self.time, actor=replica.actor):
+            replica.set(value, _timestamp=self.time)
 
-        ts = self.tick()
-
-        replica1.set(value1, _timestamp=ts)
-        self.model.set(value1, timestamp=ts, actor=replica1.actor)
-        assert replica1.timestamp == ts,\
-            f"replica.timestamp {replica1.timestamp} != {ts}"
-
-        replica2.set(value2, _timestamp=ts)
-        self.model.set(value2, timestamp=ts, actor=replica2.actor)
-        assert replica2.timestamp == ts,\
-            f"replica.timestamp {replica2.timestamp} != {ts}"
-
-        assert replica1.vclock // replica2.vclock
-        assert (replica1 << replica2) == (replica1.actor < replica2.actor)
-
-        model = self.model
-        if replica1.actor < replica2.actor:
-            assert model.value == replica2.value
-        else:
-            assert model.value == replica1.value
-
+    @rule()
     def tick(self):
-        result = self.time
         self.time += 1
-        return result
