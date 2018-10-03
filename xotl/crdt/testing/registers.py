@@ -26,19 +26,45 @@ atoms = (
 )
 
 
+# I'm splitting the concurrent from the non-concurrent machinery.  Because
+# using a strictly monotonic time function allows for this simple test-model:
+#
+#     Time     Replica 1      Replica 2  ...     Model
+#     1        set to x                          x
+#     2                       set to y           y
+#
+# There's no problem to update the Model to y, because Time is total, even
+# though the vector clocks of the replicas are concurrent ([1, 0] and [0, 1])
+# their timestamp makes Replica 2 a winner.
+#
+# The problem happens with:
+#
+#     Time     Replica 1      Replica 2  ...     Model
+#     1        set to x       set to y           ?
+#
+# What is the right value for Model?  Worst yet with three replicas:
+#
+#     Time     Replica 1      Replica 2   Replica 3     Model
+#     1        set to x       set to y                  ?
+#     2                       set to z    set to a      ?
+#
+
+
 @dataclass
 class Register:
     value: Any = field(default=None)  # type: ignore
     timestamp: float = field(default=0)  # type: ignore
+    actor: str = field(default=None)     # type: ignore
 
-    def set(self, value, timestamp=None):
+    def set(self, value, timestamp=None, actor=None):
         '''Set the register's value.
 
         If `timestamp` is none defaults the result of
         `~xotl.crdt.clocks.monotonic`:func:.
 
         The value is only updated if `timestamp` is greater than the last
-        recorded timestamp.
+        recorded timestamp; or the timestamp is the same but the actor is
+        greater.
 
         '''
         if timestamp is None:
@@ -46,6 +72,11 @@ class Register:
         if timestamp > self.timestamp:
             self.value = value
             self.timestamp = timestamp
+            self.actor = actor
+        elif timestamp == self.timestamp and (not self.actor or actor > self.actor):
+            self.value = value
+            self.timestamp = timestamp
+            self.actor = actor
 
 
 class BaseLWWRegisterMachine(BaseCRDTMachine):
@@ -101,20 +132,23 @@ class LWWRegisterConcurrentMachine(BaseLWWRegisterMachine):
         ts = self.tick()
 
         replica1.set(value1, _timestamp=ts)
+        self.model.set(value1, timestamp=ts, actor=replica1.actor)
         assert replica1.timestamp == ts,\
             f"replica.timestamp {replica1.timestamp} != {ts}"
 
         replica2.set(value2, _timestamp=ts)
+        self.model.set(value2, timestamp=ts, actor=replica2.actor)
         assert replica2.timestamp == ts,\
             f"replica.timestamp {replica2.timestamp} != {ts}"
 
         assert replica1.vclock // replica2.vclock
-
         assert (replica1 << replica2) == (replica1.actor < replica2.actor)
+
+        model = self.model
         if replica1.actor < replica2.actor:
-            self.model.set(value2, timestamp=ts)
+            assert model.value == replica2.value
         else:
-            self.model.set(value1, timestamp=ts)
+            assert model.value == replica1.value
 
     def tick(self):
         result = self.time

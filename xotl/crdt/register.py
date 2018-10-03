@@ -73,6 +73,8 @@ class LWWRegister(CvRDT):
         '''
         if self.vclock < other.vclock:
             return True
+        elif self.vclock > other.vclock:
+            return False
         elif self.vclock // other.vclock or self.vclock == self.vclock:
             if self.timestamp < other.timestamp:
                 return True
@@ -81,16 +83,20 @@ class LWWRegister(CvRDT):
             else:
                 return self.actor < other.actor
         else:
-            assert self.vclock > other.vclock
-            return False
+            assert False
 
     def merge(self, other: 'LWWRegister') -> None:  # type: ignore
-        self.vclock += other.vclock
         if self << other:
+            assert not (other << self)
             self.atom = other.value
             # I need to trick the vclock to update the timestamp of the
             # winning node.
+            self.vclock += other.vclock
             object.__setattr__(self.dot, 'timestamp', other.timestamp)
+        else:
+            ts = self.timestamp
+            self.vclock += other.vclock
+            object.__setattr__(self.dot, 'timestamp', ts)
 
     def __repr__(self):
         return f"<LWWRegister: {self.value}; {self.actor}, {self.vclock.simplified}>"

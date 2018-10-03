@@ -53,3 +53,6 @@ def test_concurrence():
     v2 = VClock(dots=(Dot(actor='R1', counter=1, timestamp=0),))
 
     assert v1 // v2 and v2 // v1
+
+    v1 = VClock()
+    assert not (v1 // v2)
