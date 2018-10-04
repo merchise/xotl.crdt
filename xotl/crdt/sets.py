@@ -11,8 +11,7 @@ from xotl.crdt.clocks import VClock, Dot
 
 
 class GSet(CvRDT):
-    def __init__(self, *, actor):
-        self.actor = actor
+    def init(self):
         self.items = set()
 
     @property
@@ -28,12 +27,14 @@ class GSet(CvRDT):
     def add(self, item):
         self.items.add(item)
 
+    def reset(self, items=frozenset()):
+        self.items = set(items)
+
 
 class TwoPhaseSet(CvRDT):
-    def __init__(self, *, actor):
-        self.actor = actor
-        self.living = GSet(actor=actor)
-        self.dead = GSet(actor=actor)
+    def init(self):
+        self.living = GSet(actor=self.actor)
+        self.dead = GSet(actor=self.actor)
 
     @property
     def value(self):
@@ -57,6 +58,11 @@ class TwoPhaseSet(CvRDT):
         else:
             return False
 
+    def reset(self, items=frozenset()):
+        self.living = GSet()
+        self.living.reset(items)
+        self.dead = GSet()
+
 
 class USet(CvRDT):
     '''The USet.
@@ -65,8 +71,7 @@ class USet(CvRDT):
        the same item twice.  This as way to implement the `ORSet`:class:.
 
     '''
-    def __init__(self, *, actor):
-        self.actor = actor
+    def init(self):
         self.vclock = VClock()
         self.items = set()
 
@@ -113,14 +118,17 @@ class USet(CvRDT):
     def __repr__(self):
         return f"<USet: {self.value}; {self.actor}, {self.vclock.simplified}>"
 
+    def reset(self):
+        self.vlock = VClock()
+        self.items = set()
+
 
 class ORSet(CvRDT):
     '''The Observed-Remove Set.
 
     '''
-    def __init__(self, *, actor) -> None:
-        self.actor = actor
-        self.items = USet(actor=actor)
+    def init(self):
+        self.items = USet(actor=self.actor)
         self.ticks = 0
 
     def __le__(self, other: 'ORSet') -> bool:
@@ -173,3 +181,9 @@ class ORSet(CvRDT):
 
     def __repr__(self):
         return f"<ORSet: {self.value}; {self.actor}, {self.items}>"
+
+    def reset(self):
+        '''Reset the value of the set to the initial state.
+
+        '''
+        self.items.reset()

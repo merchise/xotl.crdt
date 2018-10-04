@@ -6,8 +6,6 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-
-
 class CvRDT:
     '''Base class for Convergent Replicated Data Types.
 
@@ -15,6 +13,12 @@ class CvRDT:
     **must** implement the following methods and attributes.
 
     '''
+    def __init__(self, *, actor: str) -> None:
+        self.actor = actor
+        self.init()
+
+    def init(self) -> None:
+        '''Set the initial state of a newly create CRDT.'''
 
     def merge(self, other: 'CvRDT') -> None:
         '''Update the CvRDT to account for the another replica's state.
@@ -53,6 +57,19 @@ class CvRDT:
     def from_state(cls, state) -> 'CvRDT':
         '''Reconstruct a CvRDT from `state`:any:.'''
         return state
+
+    def reset(self) -> None:
+        '''Reset the internal state of value, usually to the initial state.
+
+        .. warning:: This method should only be used within the boundaries of
+           a coordination controlled layer.
+
+           Notice it may not be sufficient for a majority of the nodes to
+           agree on the value, but the whole set of nodes.  You probably only
+           need to call this when removing/adding an actor from the cluster.
+
+        '''
+        self.init()
 
 
 reconstruct = CvRDT.from_state

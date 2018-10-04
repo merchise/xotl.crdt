@@ -18,9 +18,8 @@ class LWWRegister(CvRDT):
     wins.
 
     '''
-    def __init__(self, *, actor: str) -> None:
-        self.actor = actor
-        self.vclock = VClock([Dot(actor, 0, 0)])
+    def init(self):
+        self.vclock = VClock([Dot(self.actor, 0, 0)])
         self.atom = None
 
     @property
@@ -100,3 +99,16 @@ class LWWRegister(CvRDT):
 
     def __repr__(self):
         return f"<LWWRegister: {self.value}; {self.actor}, {self.vclock.simplified}>"
+
+    def reset(self, value=None):
+        '''Reset the internal state of value.
+
+        This method should only be used within the boundaries of a
+        coordination controlled layer.  Notice it may not be sufficient for a
+        majority of the nodes to agree on the value, but the whole set of
+        nodes.  You probably only need to call this when removing/adding an
+        actor from the cluster.
+
+        '''
+        self.vclock = VClock()
+        self.atom = value

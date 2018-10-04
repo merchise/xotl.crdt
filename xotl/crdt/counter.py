@@ -14,8 +14,7 @@ class GCounter(CvRDT):
     '''A increment-only counter.
 
     '''
-    def __init__(self, *, actor: str) -> None:
-        self.actor = actor
+    def init(self):
         self.vclock = VClock()
 
     def __repr__(self):
@@ -37,13 +36,21 @@ class GCounter(CvRDT):
     def __le__(self, other):
         return self.vclock <= other.vclock
 
+    def reset(self):
+        '''Reset the counter to 0.
+
+        .. warning:: This an operation that must be coordinated between
+           actors.
+
+        '''
+        self.vclock.reset()
+
 
 class PNCounter(CvRDT):
     '''A counter that allows increments and decrements.'''
-    def __init__(self, *, actor: str) -> None:
-        self.actor = actor
-        self.pos = GCounter(actor=actor)
-        self.neg = GCounter(actor=actor)
+    def init(self):
+        self.pos = GCounter(actor=self.actor)
+        self.neg = GCounter(actor=self.actor)
 
     def __repr__(self):
         return f"<PNCounter of {self.value}; with {self.pos} and {self.neg}>"
@@ -68,3 +75,13 @@ class PNCounter(CvRDT):
 
     def __le__(self, other):
         return self.pos <= other.pos and self.neg <= other.neg
+
+    def reset(self):
+        '''Reset the counter to 0.
+
+        .. warning:: This an operation that must be coordinated between
+           actors.
+
+        '''
+        self.pos.reset()
+        self.neg.reset()

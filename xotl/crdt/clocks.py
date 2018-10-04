@@ -183,6 +183,14 @@ class VClock:
     def simplified(self):
         return VClock([d for d in self.dots if d.counter])
 
+    def reset(self):
+        '''Reset the clock.
+
+        Basically forget about all the clock state.
+
+        '''
+        self.dots = ()
+
 
 def index(a, x, key=None):
     'Locate the leftmost value exactly equal to x'
