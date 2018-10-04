@@ -8,6 +8,7 @@
 #
 '''Base interfaces.'''
 
+
 class CvRDT:
     '''Base class for Convergent Replicated Data Types.
 
