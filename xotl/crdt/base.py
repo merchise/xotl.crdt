@@ -6,6 +6,8 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+'''Base interfaces.'''
+
 class CvRDT:
     '''Base class for Convergent Replicated Data Types.
 
