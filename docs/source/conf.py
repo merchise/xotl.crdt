@@ -26,7 +26,7 @@ copyright = copyright.format(datetime.now().year)
 author = 'Merchise Autrement [~º/~]'
 
 import pkg_resources
-dist = pkg_resources.get_distribution('xotl.crdt')
+dist = pkg_resources.get_distribution(project)
 # The short X.Y version.
 version = dist.version
 release = version
