@@ -10,14 +10,6 @@
 
    .. automethod:: incr
 
-   .. property:: value
-
-   .. rubric:: Internal CRDT API
-
-   .. automethod:: merge
-
-   .. automethod:: reset
-
 
 .. autoclass:: PNCounter
 
@@ -26,11 +18,3 @@
    .. automethod:: incr
 
    .. automethod:: decr
-
-   .. property:: value
-
-   .. rubric:: Internal CRDT API
-
-   .. automethod:: merge
-
-   .. automethod:: reset

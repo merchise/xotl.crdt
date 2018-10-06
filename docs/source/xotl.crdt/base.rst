@@ -22,7 +22,7 @@
       The current value that is managed by this CRDT.
 
       This could be any type of value.  But you *must* never assume changes to
-      the value return will be of any effect.  Each CRDT implements methods to
+      the value will be of any effect.  Each CRDT implements methods to
       properly update its value.
 
       This is a read-only property.

@@ -10,14 +10,6 @@
 
    .. automethod:: add
 
-   .. property:: value
-
-   .. rubric:: Internal CRDT API
-
-   .. automethod:: merge
-
-   .. automethod:: reset
-
 
 .. autoclass:: TwoPhaseSet
 
@@ -26,14 +18,6 @@
    .. automethod:: add
 
    .. automethod:: remove
-
-   .. property:: value
-
-   .. rubric:: Internal CRDT API
-
-   .. automethod:: merge
-
-   .. automethod:: reset
 
 
 .. autoclass:: USet
@@ -44,14 +28,6 @@
 
    .. automethod:: remove
 
-   .. property:: value
-
-   .. rubric:: Internal CRDT API
-
-   .. automethod:: merge
-
-   .. automethod:: reset
-
 
 .. autoclass:: ORSet
 
@@ -60,11 +36,3 @@
    .. automethod:: add
 
    .. automethod:: remove
-
-   .. property:: value
-
-   .. rubric:: Internal CRDT API
-
-   .. automethod:: merge
-
-   .. automethod:: reset
