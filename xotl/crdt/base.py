@@ -7,6 +7,33 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 '''Base interfaces.'''
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, order=True)
+class Actor:
+    '''Represents an actor or node that holds replicated objects.
+
+    We require (for some CRDTs) that actors are uniquely named and totally
+    ordered across the cluster.  So when adding/removing actors you should
+    take measures for not reusing old names.
+
+    '''
+    order: int
+    name: str
+
+    def __init__(self, name: str, order: int) -> None:
+        object.__setattr__(self, 'name', name)
+        object.__setattr__(self, 'order', order)
+
+    def __repr__(self):
+        return f"Actor({self.name!r}, {self.order!r})"
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Actor):
+            return self.name == other.name
+        else:
+            return NotImplemented
 
 
 class CvRDT:
@@ -16,7 +43,7 @@ class CvRDT:
     **must** implement the following methods and attributes.
 
     '''
-    def __init__(self, *, actor: str) -> None:
+    def __init__(self, *, actor: Actor) -> None:
         self.actor = actor
         self.init()
 

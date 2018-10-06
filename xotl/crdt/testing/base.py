@@ -10,7 +10,7 @@ from copy import deepcopy
 from random import shuffle
 from xoutil.future.itertools import continuously_slides as slide, product
 
-from xotl.crdt.base import from_state, get_state
+from xotl.crdt.base import from_state, get_state, Actor
 
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -50,7 +50,7 @@ class BaseCRDTMachine(RuleBasedStateMachine):
                   different actor names.
 
         '''
-        return tuple(cls(actor=f'R{i}') for i in REPLICA_NODES)
+        return tuple(cls(actor=Actor(f'R{i}', i)) for i in REPLICA_NODES)
 
 
 class ModelBasedCRDTMachine(BaseCRDTMachine):

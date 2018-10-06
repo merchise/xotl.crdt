@@ -48,6 +48,9 @@
    .. automethod:: reset
 
 
+.. autoclass:: Actor
+
+
 .. rubric:: Transmitting and receiving the CRDT state
 
 The following two functions allow for CRDT to be transmitted from one process
