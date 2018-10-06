@@ -50,22 +50,45 @@ class LWWRegister(CvRDT):
         self.vclock = self.vclock.bump(self.actor, _timestamp=ts)
         self.atom = value
 
-    def __le__(self, other: 'LWWRegister') -> bool:
-        return self.vclock <= other.vclock
+    def __le__(self, other) -> bool:
+        if isinstance(other, LWWRegister):
+            return self.vclock <= other.vclock
+        else:
+            return NotImplemented
 
-    def __lt__(self, other: 'LWWRegister') -> bool:
-        return self.vclock < other.vclock
+    def __eq__(self, other) -> bool:
+        if isinstance(other, LWWRegister):
+            return self.actor == other.actor and self.vclock == other.vclock
+        else:
+            return NotImplemented
 
-    def __gt__(self, other: 'LWWRegister') -> bool:
-        return self.vclock > other.vclock
+    def __lt__(self, other) -> bool:
+        if isinstance(other, LWWRegister):
+            return self.vclock < other.vclock
+        else:
+            return NotImplemented
 
-    def __ge__(self, other: 'LWWRegister') -> bool:
-        return self.vclock >= other.vclock
+    def __gt__(self, other) -> bool:
+        if isinstance(other, LWWRegister):
+            return self.vclock > other.vclock
+        else:
+            return NotImplemented
 
-    def __floordiv__(self, other: 'LWWRegister') -> bool:
-        return self.vclock // other.vclock
+    def __ge__(self, other) -> bool:
+        if isinstance(other, LWWRegister):
+            return self.vclock >= other.vclock
+        else:
+            return NotImplemented
 
-    def __lshift__(self, other: 'LWWRegister') -> bool:
+    def __floordiv__(self, other) -> bool:
+        if isinstance(other, LWWRegister):
+            return self.vclock // other.vclock
+        else:
+            raise TypeError(f"'//' not supported for instances "
+                            f"of type '{type(self).__name__}' and "
+                            f"type '{type(other).__name__}'")
+
+    def __lshift__(self, other) -> bool:
         '''True is `other` wins.
 
         `other` wins if:
@@ -77,6 +100,10 @@ class LWWRegister(CvRDT):
           higher timestamp.
 
         '''
+        if not isinstance(other, LWWRegister):
+            raise TypeError(f"'<<' not supported for instances "
+                            f"of type '{type(self).__name__}' and "
+                            f"type '{type(other).__name__}'")
         if self.vclock < other.vclock:
             return True
         elif self.vclock > other.vclock:

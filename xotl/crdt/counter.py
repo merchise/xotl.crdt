@@ -33,8 +33,11 @@ class GCounter(CvRDT):
         'Merge this replica with another in-place'
         self.vclock += other.vclock
 
-    def __le__(self, other):
-        return self.vclock <= other.vclock
+    def __le__(self, other) -> bool:
+        if isinstance(other, GCounter):
+            return self.vclock <= other.vclock
+        else:
+            return NotImplemented
 
     def reset(self):
         '''Reset the counter to 0.
@@ -44,6 +47,12 @@ class GCounter(CvRDT):
 
         '''
         self.vclock.reset()
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, GCounter):
+            return self.actor == other.actor and self.vclock == other.vclock
+        else:
+            return NotImplemented
 
 
 class PNCounter(CvRDT):
@@ -73,8 +82,19 @@ class PNCounter(CvRDT):
         self.pos.merge(other.pos)
         self.neg.merge(other.neg)
 
-    def __le__(self, other):
-        return self.pos <= other.pos and self.neg <= other.neg
+    def __le__(self, other) -> bool:
+        if isinstance(other, PNCounter):
+            return self.pos <= other.pos and self.neg <= other.neg
+        else:
+            return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, PNCounter):
+            return (self.actor == other.actor and
+                    self.pos == other.pos and
+                    self.neg == other.neg)
+        else:
+            return NotImplemented
 
     def reset(self):
         '''Reset the counter to 0.

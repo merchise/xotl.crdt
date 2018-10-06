@@ -10,7 +10,7 @@ from copy import deepcopy
 from random import shuffle
 from xoutil.future.itertools import continuously_slides as slide, product
 
-from xotl.crdt.base import reconstruct
+from xotl.crdt.base import from_state, get_state
 
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -35,6 +35,10 @@ class BaseCRDTMachine(RuleBasedStateMachine):
     @rule(target=replicas, name=process_names)
     def replica(self, name):
         return self.subjects[name]
+
+    @rule(crdt=replicas)
+    def from_state_get_state(self, crdt):
+        assert crdt == from_state(get_state(crdt))
 
     def create_subjects(self, cls):
         '''Return a tuple of instances of `cls`.
@@ -74,9 +78,9 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
         shuffle(senders)
         before_merge = []
         for sender in senders:
-            state = sender.state
+            state = get_state(sender)
             before_merge.append(deepcopy(receiver))
-            receiver.merge(reconstruct(state))
+            receiver.merge(from_state(state))
             assert sender <= receiver
         model = self.model
         assert receiver.value == model.value, \
@@ -115,12 +119,12 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
         shuffle(replicas)
         before = deepcopy(replicas)  # noqa
         for sender, receiver in slide(replicas):
-            state = sender.state
-            receiver.merge(reconstruct(state))
+            state = get_state(sender)
+            receiver.merge(from_state(state))
             assert sender <= receiver
         for sender, receiver in slide(reversed(replicas)):
-            state = sender.state
-            receiver.merge(reconstruct(state))
+            state = get_state(sender)
+            receiver.merge(from_state(state))
             assert sender <= receiver
         first = replicas[0]
         assert all(r.value == s.value for r, s in product(replicas, replicas))

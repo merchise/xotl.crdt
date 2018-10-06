@@ -2,7 +2,9 @@
  :mod:`xotl.crdt.base` -- Basic interfaces and API
 ===================================================
 
-.. automodule:: xotl.crdt.base
+.. module:: xotl.crdt.base
+
+.. rubric:: Common interface for all CRDTs.
 
 .. autoclass:: CvRDT
 
@@ -27,23 +29,31 @@
 
    .. rubric:: Internal (coordination layer) CRDT API.
 
-   Every CvRDT must implement this methods to initialize, and update its state
+   Every CvRDT must implement these methods to initialize and update its state
    upon requests from the coordination layer.
-
-   .. automethod:: init
 
    .. automethod:: merge
 
-   .. autoproperty:: state
+   .. automethod:: __le__
 
-   .. classmethod:: from_state
+   .. automethod:: __eq__
+
+   .. warning:: The following two methods should only be used within the
+      boundaries of a coordinated controlled layer.  They may alter the
+      internal state of CRDT in a way that could break the expected semantics
+      unless you take measures to ensure it.
+
+   .. automethod:: init
 
    .. automethod:: reset
 
-   .. rubric:: Expectations for coordination
 
-   Notice that you should call `~CvRDT.from_state`:any: for the *right*
-   sub-class.
+.. rubric:: Transmitting and receiving the CRDT state
 
-   .. note:: We're considering to remove ``state`` and ``from_state`` from
-             this class; since they seem to be more related to transmission.
+The following two functions allow for CRDT to be transmitted from one process
+to another and/or saved in a file.  They use `pickle`:mod:; which means you're
+responsible for enforcing the required security.
+
+.. autofunction:: get_state
+
+.. autofunction:: from_state

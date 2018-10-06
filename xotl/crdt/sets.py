@@ -6,7 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from typing import Set
+from typing import Iterable, Any
 from xotl.crdt.base import CvRDT
 from xotl.crdt.clocks import VClock, Dot
 
@@ -22,8 +22,15 @@ class GSet(CvRDT):
     def value(self) -> frozenset:
         return frozenset(self.items)
 
-    def __le__(self, other: 'GSet') -> bool:
+    def __le__(self, other) -> bool:
+        if not isinstance(other, GSet):
+            return NotImplemented
         return self.value <= other.value
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, GSet):
+            return NotImplemented
+        return self.actor == other.actor and self.items == other.items
 
     def merge(self, other: 'GSet') -> None:  # type: ignore
         self.items |= other.value
@@ -32,9 +39,9 @@ class GSet(CvRDT):
         'Add `item` to the set.'
         self.items.add(item)
 
-    def reset(self, items: Set = frozenset()):
+    def reset(self, items: Iterable[Any] = None):
         'Reset the set with `items`.'
-        self.items = set(items)
+        self.items = set(items or [])
 
 
 class TwoPhaseSet(CvRDT):
@@ -47,9 +54,17 @@ class TwoPhaseSet(CvRDT):
         '''The current value.'''
         return frozenset(self.living.value - self.dead.value)
 
-    def __le__(self, other: 'TwoPhaseSet') -> bool:
-        return (self.living.value <= other.living.value or
-                self.dead.value <= other.dead.value)
+    def __le__(self, other) -> bool:
+        if not isinstance(other, TwoPhaseSet):
+            return NotImplemented
+        return self.living <= other.living or self.dead <= other.dead
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, TwoPhaseSet):
+            return NotImplemented
+        return (self.actor == other.actor and
+                self.living == other.living and
+                self.dead == other.dead)
 
     def merge(self, other: 'TwoPhaseSet') -> None:  # type: ignore
         self.living.items |= other.living.items
@@ -72,11 +87,11 @@ class TwoPhaseSet(CvRDT):
         else:
             return False
 
-    def reset(self, items: Set = frozenset()):
+    def reset(self, items: Iterable[Any] = None):
         '''Reset to an initial value of `items`.'''
-        self.living = GSet()
+        self.living = GSet(actor=self.actor)
         self.living.reset(items)
-        self.dead = GSet()
+        self.dead = GSet(actor=self.actor)
 
 
 class USet(CvRDT):
@@ -94,8 +109,17 @@ class USet(CvRDT):
     def value(self):
         return frozenset(self.items)
 
-    def __le__(self, other: 'USet') -> bool:
-        return self.vclock <= other.vclock
+    def __le__(self, other) -> bool:
+        if isinstance(other, USet):
+            return self.vclock <= other.vclock
+        else:
+            return NotImplemented
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, USet):
+            return self.actor == other.actor and self.vclock == other.vclock
+        else:
+            return NotImplemented
 
     def merge(self, other: 'USet') -> None:  # type: ignore
         if self.vclock >= other.vclock:
@@ -133,10 +157,10 @@ class USet(CvRDT):
     def __repr__(self):
         return f"<USet: {self.value}; {self.actor}, {self.vclock.simplified}>"
 
-    def reset(self, items: Set = frozenset()):
+    def reset(self, items: Iterable[Any] = None):
         'Reset the value with `items`.'
         self.vlock = VClock()
-        self.items = set(items)
+        self.items = set(items or [])
 
 
 class ORSet(CvRDT):
@@ -144,11 +168,22 @@ class ORSet(CvRDT):
 
     '''
     def init(self):
-        self.items = USet(actor=self.actor)
+        self.items: USet = USet(actor=self.actor)
         self.ticks = 0
 
-    def __le__(self, other: 'ORSet') -> bool:
-        return self.items <= other.items
+    def __le__(self, other) -> bool:
+        if isinstance(other, ORSet):
+            return self.items <= other.items
+        else:
+            return NotImplemented
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, ORSet):
+            return (self.actor == other.actor and
+                    self.items == other.items and
+                    self.ticks == other.ticks)
+        else:
+            return NotImplemented
 
     def merge(self, other: 'ORSet') -> None:  # type: ignore
         self.items.merge(other.items)
@@ -199,8 +234,8 @@ class ORSet(CvRDT):
     def __repr__(self):
         return f"<ORSet: {self.value}; {self.actor}, {self.items}>"
 
-    def reset(self, items: Set = frozenset()):
+    def reset(self, items: Iterable[Any] = None):
         '''Reset the value of the set with `items`.
 
         '''
-        self.items.reset(items=items)
+        self.items.reset(items)

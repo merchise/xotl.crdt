@@ -42,44 +42,49 @@ class CvRDT:
         '''
         raise NotImplementedError
 
-    @property
-    def state(self):
-        '''The current state of the CRDT.
-
-        This is intended to specialize the way the CRDT transmits its state to
-        other processes.
-
-        The intention is that you use it (**unmodified**) before transmission
-        to other replica.  The receiving replica should reconstruct from it
-        and merge.
-
-        .. code-block:: python
-
-           replica1.merge(CvRDT.from_state(replica2.state))
-
-        This implementation only return itself.
-
-        '''
-        return self
-
-    @classmethod
-    def from_state(cls, state) -> 'CvRDT':
-        '''Reconstruct a CvRDT from `state`:any:.
-
-        This implementation, return `state` unchanged.
-
-        '''
-        return state
-
     def reset(self) -> None:
         '''Reset the internal state of value, usually to the initial state.
 
-        .. warning:: This method should only be used within the boundaries of
-           a coordination controlled layer.
-
-           Notice it may not be sufficient for a majority of the nodes to
-           agree on the value, but the whole set of nodes.  You probably only
-           need to call this when removing/adding an actor from the cluster.
-
         '''
         self.init()
+
+    def __le__(self, other):
+        '''Compares two replicas for '<=' in the semilattice.
+
+        This is **NOT** a relation of the `value`:any:.
+
+        '''
+        return NotImplemented
+
+    def __eq__(self, other) -> bool:
+        '''Compares two replicas for '==' in the semilattice.
+
+        This is **NOT** a relation of the `value`:any:.
+
+        '''
+        return NotImplemented
+
+
+def get_state(crdt: CvRDT) -> bytes:
+    '''Dumps the crdt in a way that is amenable for transmission/storage.
+
+    '''
+    import pickle
+    return pickle.dumps(crdt)
+
+
+def from_state(state: bytes) -> CvRDT:
+    '''Reconstruct the CRDT from its dumped state.
+
+    `state` should be the result of calling `get_state`:func:.  The following
+    property should always hold::
+
+        assert crdt == from_state(get_state(crdt))
+
+    '''
+    import pickle
+    res = pickle.loads(state)
+    if not isinstance(res, CvRDT):
+        raise ValueError('Invalid state')
+    else:
+        return res
