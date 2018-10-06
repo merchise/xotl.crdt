@@ -35,6 +35,13 @@ class LWWRegister(CvRDT):
         return self.dot.timestamp
 
     def set(self, value, *, _timestamp=None):
+        '''Set the `value` of the register.
+
+        `value` should be an immutable object.  Putting a mutable object may
+        lead to unexpected behavior (specially if it implements an unsafe
+        hash).
+
+        '''
         hash(value)  # Check is immutable; mutable objs should raise an error
         if _timestamp is None:
             ts = max(self.dot.timestamp, monotonic())

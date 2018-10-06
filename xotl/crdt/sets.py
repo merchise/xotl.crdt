@@ -6,16 +6,20 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+from typing import Set
 from xotl.crdt.base import CvRDT
 from xotl.crdt.clocks import VClock, Dot
 
 
 class GSet(CvRDT):
+    '''The Grow-only set.
+
+    '''
     def init(self):
         self.items = set()
 
     @property
-    def value(self):
+    def value(self) -> frozenset:
         return frozenset(self.items)
 
     def __le__(self, other: 'GSet') -> bool:
@@ -25,9 +29,11 @@ class GSet(CvRDT):
         self.items |= other.value
 
     def add(self, item):
+        'Add `item` to the set.'
         self.items.add(item)
 
-    def reset(self, items=frozenset()):
+    def reset(self, items: Set = frozenset()):
+        'Reset the set with `items`.'
         self.items = set(items)
 
 
@@ -37,8 +43,9 @@ class TwoPhaseSet(CvRDT):
         self.dead = GSet(actor=self.actor)
 
     @property
-    def value(self):
-        return self.living.value - self.dead.value
+    def value(self) -> frozenset:
+        '''The current value.'''
+        return frozenset(self.living.value - self.dead.value)
 
     def __le__(self, other: 'TwoPhaseSet') -> bool:
         return (self.living.value <= other.living.value or
@@ -49,16 +56,24 @@ class TwoPhaseSet(CvRDT):
         self.dead.items |= other.dead.items
 
     def add(self, item) -> None:
+        'Add `item` to the set.'
         self.living.add(item)
 
     def remove(self, item) -> bool:
+        '''Remove `item` to the set.
+
+        If `item` is not in (this replica's view of) the set, do nothing.  If
+        it was, remove it and the item will never in the set again.
+
+        '''
         if item in self.value:
             self.dead.add(item)
             return True
         else:
             return False
 
-    def reset(self, items=frozenset()):
+    def reset(self, items: Set = frozenset()):
+        '''Reset to an initial value of `items`.'''
         self.living = GSet()
         self.living.reset(items)
         self.dead = GSet()
@@ -108,7 +123,7 @@ class USet(CvRDT):
     def remove(self, item) -> None:
         '''Remove `item` to the set.
 
-        If `item` is not in the (at this replica) nothing happens.
+        If `item` is not in (this replica's view of) the set, nothing happens.
 
         '''
         if item in self.items:
@@ -118,9 +133,10 @@ class USet(CvRDT):
     def __repr__(self):
         return f"<USet: {self.value}; {self.actor}, {self.vclock.simplified}>"
 
-    def reset(self):
+    def reset(self, items: Set = frozenset()):
+        'Reset the value with `items`.'
         self.vlock = VClock()
-        self.items = set()
+        self.items = set(items)
 
 
 class ORSet(CvRDT):
@@ -165,9 +181,10 @@ class ORSet(CvRDT):
     def remove(self, item):
         '''Remove `item` from the set.
 
-        We remove the observed instances of `item` in this replica.  This
-        means that an ``add(x)`` at one replica concurrent with a
-        ``remove(x)`` at another, will result in the item being kept.
+        We remove the **observed instances** of `item` in this replica; if
+        this replica hasn't any, do nothing.  This also means that an
+        ``add(x)`` at one replica concurrent with a ``remove(x)`` at another,
+        will result in the item being kept.
 
         '''
         xs = [x for x in self.items.value if x[0] == item]
@@ -182,8 +199,8 @@ class ORSet(CvRDT):
     def __repr__(self):
         return f"<ORSet: {self.value}; {self.actor}, {self.items}>"
 
-    def reset(self):
-        '''Reset the value of the set to the initial state.
+    def reset(self, items: Set = frozenset()):
+        '''Reset the value of the set with `items`.
 
         '''
-        self.items.reset()
+        self.items.reset(items=items)

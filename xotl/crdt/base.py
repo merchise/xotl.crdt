@@ -49,16 +49,26 @@ class CvRDT:
         This is intended to specialize the way the CRDT transmits its state to
         other processes.
 
-        The intention is that you use it before merging::
+        The intention is that you use it (**unmodified**) before transmission
+        to other replica.  The receiving replica should reconstruct from it
+        and merge.
+
+        .. code-block:: python
 
            replica1.merge(CvRDT.from_state(replica2.state))
+
+        This implementation only return itself.
 
         '''
         return self
 
     @classmethod
     def from_state(cls, state) -> 'CvRDT':
-        '''Reconstruct a CvRDT from `state`:any:.'''
+        '''Reconstruct a CvRDT from `state`:any:.
+
+        This implementation, return `state` unchanged.
+
+        '''
         return state
 
     def reset(self) -> None:
@@ -73,6 +83,3 @@ class CvRDT:
 
         '''
         self.init()
-
-
-reconstruct = CvRDT.from_state

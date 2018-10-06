@@ -98,7 +98,7 @@ class LWWRegisterMachine(ModelBasedCRDTMachine):
     '''A simple LWWRegister stateful test machine.
 
     Since we run tests in a single process, each call to `run_set`:meth:
-    happens after the previous, so we're allow to update the test-model with
+    happens after the previous, so we're allowed to update the test-model with
     our value.
 
     See `LWWRegisterConcurrentMachine`:class: for a machine that simulate
