@@ -30,7 +30,7 @@ class GSet(CvRDT):
     def __eq__(self, other) -> bool:
         if not isinstance(other, GSet):
             return NotImplemented
-        return self.actor == other.actor and self.items == other.items
+        return self.process == other.process and self.items == other.items
 
     def merge(self, other: 'GSet') -> None:  # type: ignore
         self.items |= other.value
@@ -46,8 +46,8 @@ class GSet(CvRDT):
 
 class TwoPhaseSet(CvRDT):
     def init(self):
-        self.living = GSet(actor=self.actor)
-        self.dead = GSet(actor=self.actor)
+        self.living = GSet(process=self.process)
+        self.dead = GSet(process=self.process)
 
     @property
     def value(self) -> frozenset:
@@ -62,7 +62,7 @@ class TwoPhaseSet(CvRDT):
     def __eq__(self, other) -> bool:
         if not isinstance(other, TwoPhaseSet):
             return NotImplemented
-        return (self.actor == other.actor and
+        return (self.process == other.process and
                 self.living == other.living and
                 self.dead == other.dead)
 
@@ -89,9 +89,8 @@ class TwoPhaseSet(CvRDT):
 
     def reset(self, items: Iterable[Any] = None):
         '''Reset to an initial value of `items`.'''
-        self.living = GSet(actor=self.actor)
         self.living.reset(items)
-        self.dead = GSet(actor=self.actor)
+        self.dead.reset()
 
 
 class USet(CvRDT):
@@ -117,7 +116,7 @@ class USet(CvRDT):
 
     def __eq__(self, other) -> bool:
         if isinstance(other, USet):
-            return self.actor == other.actor and self.vclock == other.vclock
+            return self.process == other.process and self.vclock == other.vclock
         else:
             return NotImplemented
 
@@ -141,7 +140,7 @@ class USet(CvRDT):
 
     def add(self, item) -> None:
         '''Add `item` to the set.'''
-        self.vclock = self.vclock.bump(self.actor)
+        self.vclock = self.vclock.bump(self.process)
         self.items.add(item)
 
     def remove(self, item) -> None:
@@ -151,11 +150,11 @@ class USet(CvRDT):
 
         '''
         if item in self.items:
-            self.vclock = self.vclock.bump(self.actor)
+            self.vclock = self.vclock.bump(self.process)
             self.items.remove(item)
 
     def __repr__(self):
-        return f"<USet: {self.value}; {self.actor}, {self.vclock.simplified}>"
+        return f"<USet: {self.value}; {self.process}, {self.vclock.simplified}>"
 
     def reset(self, items: Iterable[Any] = None):
         'Reset the value with `items`.'
@@ -168,7 +167,7 @@ class ORSet(CvRDT):
 
     '''
     def init(self):
-        self.items: USet = USet(actor=self.actor)
+        self.items: USet = USet(process=self.process)
         self.ticks = 0
 
     def __le__(self, other) -> bool:
@@ -179,7 +178,7 @@ class ORSet(CvRDT):
 
     def __eq__(self, other) -> bool:
         if isinstance(other, ORSet):
-            return (self.actor == other.actor and
+            return (self.process == other.process and
                     self.items == other.items and
                     self.ticks == other.ticks)
         else:
@@ -194,7 +193,7 @@ class ORSet(CvRDT):
 
     @property
     def dot(self) -> Dot:
-        return self.items.vclock.find(self.actor)
+        return self.items.vclock.find(self.process)
 
     @property
     def dot_counter(self) -> int:
@@ -207,10 +206,10 @@ class ORSet(CvRDT):
         '''Add `item` to the set.
 
         '''
-        # USet requires unique items, we expect the actors are unique in the
-        # cluster and each have an ever increasing tick.
+        # USet requires unique items, we expect the processes names are unique
+        # in the cluster and each have an ever increasing tick.
         self.ticks += 1
-        x = (item, self.actor, self.ticks)
+        x = (item, self.process, self.ticks)
         self.items.add(x)
 
     def remove(self, item):
@@ -232,7 +231,7 @@ class ORSet(CvRDT):
             object.__setattr__(self.dot, 'counter', counter + 1)
 
     def __repr__(self):
-        return f"<ORSet: {self.value}; {self.actor}, {self.items}>"
+        return f"<ORSet: {self.value}; {self.process}, {self.items}>"
 
     def reset(self, items: Iterable[Any] = None):
         '''Reset the value of the set with `items`.

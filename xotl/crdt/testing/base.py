@@ -10,7 +10,7 @@ from copy import deepcopy
 from random import shuffle
 from xoutil.future.itertools import continuously_slides as slide, product
 
-from xotl.crdt.base import from_state, get_state, Actor
+from xotl.crdt.base import from_state, get_state, Process
 
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -43,14 +43,14 @@ class BaseCRDTMachine(RuleBasedStateMachine):
     def create_subjects(self, cls):
         '''Return a tuple of instances of `cls`.
 
-        :param cls: a callable that takes keyword argument 'actor' and returns
-                    a replica object.
+        :param cls: a callable that takes keyword argument 'process' and
+                    returns a replica object.
 
         :returns: a tuple containing the result of several calls to `cls` with
-                  different actor names.
+                  different process names.
 
         '''
-        return tuple(cls(actor=Actor(f'R{i}', i)) for i in REPLICA_NODES)
+        return tuple(cls(process=Process(f'R{i}', i)) for i in REPLICA_NODES)
 
 
 class ModelBasedCRDTMachine(BaseCRDTMachine):

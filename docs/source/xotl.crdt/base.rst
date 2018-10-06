@@ -48,7 +48,7 @@
    .. automethod:: reset
 
 
-.. autoclass:: Actor
+.. autoclass:: Process
 
 
 .. rubric:: Transmitting and receiving the CRDT state

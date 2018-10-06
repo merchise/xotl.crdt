@@ -13,13 +13,13 @@ from xotl.crdt.clocks import VClock, Dot, monotonic
 class LWWRegister(CvRDT):
     '''The Last-Write-Wins Register.
 
-    If two actors set a value concurrently (as per vector clock counter) and
-    with the same time stamp.  The actor which is first in lexicographic order
-    wins.
+    If two processes set a value concurrently (as per vector clock counter)
+    and with the same time stamp.  The process with highest `priority
+    <xotl.crdt.base.Process>`:class: wins.
 
     '''
     def init(self):
-        self.vclock = VClock([Dot(self.actor, 0, 0)])
+        self.vclock = VClock([Dot(self.process, 0, 0)])
         self.atom = None
 
     @property
@@ -28,7 +28,7 @@ class LWWRegister(CvRDT):
 
     @property
     def dot(self) -> Dot:
-        return self.vclock.find(self.actor)
+        return self.vclock.find(self.process)
 
     @property
     def timestamp(self) -> float:
@@ -47,7 +47,7 @@ class LWWRegister(CvRDT):
             ts = max(self.dot.timestamp, monotonic())
         else:
             ts = _timestamp
-        self.vclock = self.vclock.bump(self.actor, _timestamp=ts)
+        self.vclock = self.vclock.bump(self.process, _timestamp=ts)
         self.atom = value
 
     def __le__(self, other) -> bool:
@@ -58,7 +58,7 @@ class LWWRegister(CvRDT):
 
     def __eq__(self, other) -> bool:
         if isinstance(other, LWWRegister):
-            return self.actor == other.actor and self.vclock == other.vclock
+            return self.process == other.process and self.vclock == other.vclock
         else:
             return NotImplemented
 
@@ -114,7 +114,7 @@ class LWWRegister(CvRDT):
             elif self.timestamp > other.timestamp:
                 return False
             else:
-                return self.actor < other.actor
+                return self.process < other.process
         else:
             assert False
 
@@ -132,7 +132,7 @@ class LWWRegister(CvRDT):
             object.__setattr__(self.dot, 'timestamp', ts)
 
     def __repr__(self):
-        return f"<LWWRegister: {self.value}; {self.actor}, {self.vclock.simplified}>"
+        return f"<LWWRegister: {self.value}; {self.process}, {self.vclock.simplified}>"
 
     def reset(self, value=None):
         '''Reset the internal state of value.
@@ -141,7 +141,7 @@ class LWWRegister(CvRDT):
         coordination controlled layer.  Notice it may not be sufficient for a
         majority of the nodes to agree on the value, but the whole set of
         nodes.  You probably only need to call this when removing/adding an
-        actor from the cluster.
+        process from the cluster.
 
         '''
         self.vclock = VClock()

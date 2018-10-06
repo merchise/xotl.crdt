@@ -17,14 +17,16 @@ from itertools import groupby
 from operator import attrgetter
 from time import monotonic
 
+from xotl.crdt.base import Process
+
 
 @dataclass(frozen=True, order=False, eq=True)
 class Dot:
     '''A component on the vector clock.
 
     '''
-    # actor names should be unique across all actors
-    actor: str
+    # process names should be unique across all processes
+    process: Process
     counter: int
     timestamp: float = field(compare=False)  # type: ignore
 
@@ -35,22 +37,22 @@ class VClock:
 
     def __init__(self, dots: Sequence[Dot] = None) -> None:
         if dots:
-            assert len([d.actor for d in dots]) == len({d.actor for d in dots}), \
-                f'Repeated actors in {dots!r}'
+            assert len([d.process for d in dots]) == len({d.process for d in dots}), \
+                f'Repeated processes in {dots!r}'
         # Avoid silly counters.
         dots = [d for d in (dots or []) if d.counter >= 0]
-        dots.sort(key=attrgetter('actor'))
+        dots.sort(key=attrgetter('process'))
         object.__setattr__(self, 'dots', tuple(dots))
 
     def __ge__(self, other: 'VClock') -> bool:
         '''True if this vclock descends (happens after) from other.'''
         if isinstance(other, VClock):
-            # Remember, that '.dots' are ordered by 'actor'; with this in
+            # Remember, that '.dots' are ordered by 'process'; with this in
             # mind the algorithm is easy to follow.
             #
-            # This algorithm consider missing 'actors' as if they were
-            # there with counter 0.  But, then if any actor is present
-            # with counter 0, we should remove it from the dots.
+            # This algorithm consider missing processes as if they were there
+            # with counter 0.  But, then if any process is present with
+            # counter 0, we should remove it from the dots.
             theirs = deque(d for d in other.dots if d.counter)
             ours = deque(d for d in self.dots if d.counter)
             if not theirs:
@@ -61,9 +63,9 @@ class VClock:
             while theirs and ours and result:
                 their_dot = theirs.popleft()
                 our_dot = ours.popleft()
-                while ours and their_dot.actor != our_dot.actor:
+                while ours and their_dot.process != our_dot.process:
                     our_dot = ours.popleft()
-                if our_dot.actor == their_dot.actor:
+                if our_dot.process == their_dot.process:
                     result = our_dot.counter >= their_dot.counter
                 else:
                     assert not ours
@@ -76,18 +78,18 @@ class VClock:
         '''True if this vclock is the same as other.'''
         if isinstance(other, VClock):
             # The looping structure is similar to __ge__; however, we must
-            # ensure every actor present in `self` is also present in `other`
-            # with the same counter, thus the stronger conditional in the
-            # 'return'.  This is faster than ``self >= other >= self``.
+            # ensure every process present in `self` is also present in
+            # `other` with the same counter, thus the stronger conditional in
+            # the 'return'.  This is faster than ``self >= other >= self``.
             theirs = deque(d for d in other.dots if d.counter)
             ours = deque(d for d in self.dots if d.counter)
             result = True
             while theirs and ours and result:
                 their_dot = theirs.popleft()
                 our_dot = ours.popleft()
-                while ours and their_dot.actor != our_dot.actor:
+                while ours and their_dot.process != our_dot.process:
                     our_dot = ours.popleft()
-                if our_dot.actor == their_dot.actor:
+                if our_dot.process == their_dot.process:
                     result = our_dot.counter == their_dot.counter
                 else:
                     assert not ours
@@ -131,16 +133,16 @@ class VClock:
     def merge(self, *others: 'VClock') -> 'VClock':
         '''Return the least possible common descendant.'''
         from heapq import merge
-        get_actor = attrgetter('actor')
+        get_process = attrgetter('process')
         groups = groupby(
-            merge(self.dots, *(o.dots for o in others), key=get_actor),
-            key=get_actor
+            merge(self.dots, *(o.dots for o in others), key=get_process),
+            key=get_process
         )
         dots = [
-            Dot(actor,
+            Dot(process,
                 max(d.counter for d in lgroup),
                 max(d.timestamp for d in lgroup))
-            for actor, group in groups
+            for process, group in groups
             # convert group to a list so that we can do the double max above
             for lgroup in (list(group), )
         ]
@@ -153,30 +155,30 @@ class VClock:
         'Return the merge with other.'
         return self.merge(other)
 
-    def bump(self, actor, *, _timestamp=None):
-        'Return a new VC with the actor increased'
+    def bump(self, process, *, _timestamp=None):
+        '''Return a new VC with the process's counter increased.'''
         if _timestamp is None:
             ts = monotonic()
         else:
             ts = _timestamp
         try:
-            i = index(self.dots, actor, key=attrgetter('actor'))
+            i = index(self.dots, process, key=attrgetter('process'))
             dots = list(self.dots)
             if _timestamp is None:
                 # We should never go back in time, unless we're told to do so
                 # (but there be dragons).
                 ts = max(ts, dots[i].timestamp)
-            dots[i] = Dot(actor, dots[i].counter + 1, ts)
+            dots[i] = Dot(process, dots[i].counter + 1, ts)
         except ValueError:
             from heapq import merge
-            new = Dot(actor, 1, ts)
-            dots = merge(self.dots, [new], key=attrgetter('actor'))
+            new = Dot(process, 1, ts)
+            dots = merge(self.dots, [new], key=attrgetter('process'))
         result = VClock()
         object.__setattr__(result, 'dots', tuple(dots))
         return result
 
-    def find(self, actor) -> Dot:
-        i = index(self.dots, actor, key=attrgetter('actor'))
+    def find(self, process: Process) -> Dot:
+        i = index(self.dots, process, key=attrgetter('process'))
         return self.dots[i]
 
     @property

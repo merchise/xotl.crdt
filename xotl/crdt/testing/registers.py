@@ -63,16 +63,16 @@ values = atoms | molecules
 class Register:
     value: Any = field(default=None)  # type: ignore
     timestamp: float = field(default=0)  # type: ignore
-    actor: str = field(default=None)     # type: ignore
+    process: str = field(default=None)     # type: ignore
 
-    def set(self, value, timestamp=None, actor=None):
+    def set(self, value, timestamp=None, process=None):
         '''Set the register's value.
 
         If `timestamp` is none defaults the result of
         `~xotl.crdt.clocks.monotonic`:func:.
 
         The value is only updated if `timestamp` is greater than the last
-        recorded timestamp; or the timestamp is the same but the actor is
+        recorded timestamp; or the timestamp is the same but the process is
         greater.
 
         Return True if the value was updated.
@@ -83,13 +83,13 @@ class Register:
         if timestamp > self.timestamp:
             self.value = value
             self.timestamp = timestamp
-            self.actor = actor
+            self.process = process
             return True
         elif timestamp == self.timestamp:
-            if self.actor is None or actor > self.actor:
+            if self.process is None or process > self.process:
                 self.value = value
                 self.timestamp = timestamp
-                self.actor = actor
+                self.process = process
                 return True
         return False
 
@@ -138,7 +138,7 @@ class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
         result in a (temporary) divergence of the replicas.
 
         '''
-        print(f'Set value {value} at replica {replica.actor} at {self.time}')
+        print(f'Set value {value} at replica {replica.process} at {self.time}')
         replica.set(value, _timestamp=self.time)
 
     @rule()
