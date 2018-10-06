@@ -8,7 +8,12 @@ Series 0.x
 Unreleased.  Release 0.2.0
 --------------------------
 
-Nothing yet.
+- Extract the state dump/reconstruction from `~xotl.crdt.base.CvRDT`:class:;
+  add functions `~xotl.crdt.base.get_state`:func: and
+  `~xotl.crdt.base.from_state`:func:.
+
+- Add `~xotl.crdt.base.Actor`:class: to capture the required interface of
+  actors.
 
 
 2018-10-03.  Release 0.1.1
