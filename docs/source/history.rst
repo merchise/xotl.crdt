@@ -5,7 +5,7 @@
 Series 0.x
 ==========
 
-Unreleased.  Release 0.2.0
+2018-10-16.  Release 0.2.0
 --------------------------
 
 - Replace 'process' for 'actor' across the code-base.
