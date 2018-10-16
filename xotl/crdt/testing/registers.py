@@ -14,7 +14,7 @@ from xotl.crdt.testing.base import (
     ModelBasedCRDTMachine,
     SyncBasedCRDTMachine
 )
-from xotl.crdt.clocks import monotonic
+from time import monotonic
 
 from hypothesis import strategies as st
 from hypothesis.stateful import rule
@@ -113,9 +113,11 @@ class LWWRegisterMachine(ModelBasedCRDTMachine):
     @rule(replica=ModelBasedCRDTMachine.replicas, value=values)
     def run_set(self, replica, value):
         '''Set `value` in a single replica.'''
-        replica.set(value)
+        ts = monotonic()
+        replica.set(value, _timestamp=ts)
         assert value == replica.value
-        self.model.set(value)
+        self.model.set(value, timestamp=replica.timestamp,
+                       process=replica.process)
 
 
 class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):

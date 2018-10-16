@@ -16,37 +16,37 @@ R2 = Process('R2', 2)
 
 
 def test_descend_regression1():
-    v1 = VClock(dots=(Dot(process=R0, counter=1, timestamp=0),
-                      Dot(process=R1, counter=1, timestamp=0)))
-    v2 = VClock(dots=(Dot(process=R0, counter=1, timestamp=0),))
+    v1 = VClock(dots=(Dot(process=R0, counter=1),
+                      Dot(process=R1, counter=1)))
+    v2 = VClock(dots=(Dot(process=R0, counter=1),))
     assert v1 >= v2
 
 
 def test_descend_regression2():
-    v1 = VClock(dots=(Dot(process=R0, counter=1, timestamp=0),
-                      Dot(process=R1, counter=1, timestamp=0)))
-    v2 = VClock(dots=(Dot(process=R1, counter=1, timestamp=0),))
+    v1 = VClock(dots=(Dot(process=R0, counter=1),
+                      Dot(process=R1, counter=1)))
+    v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 >= v2
 
 
 def test_descend_regression3():
-    v1 = VClock(dots=(Dot(process=R0, counter=1, timestamp=0),
-                      Dot(process=R1, counter=1, timestamp=0),
-                      Dot(process=R2, counter=0, timestamp=0)))
-    v2 = VClock(dots=(Dot(process=R1, counter=1, timestamp=0),))
+    v1 = VClock(dots=(Dot(process=R0, counter=1),
+                      Dot(process=R1, counter=1),
+                      Dot(process=R2, counter=0)))
+    v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 >= v2
 
 
 def test_missing_present_dots_regression():
-    v1 = VClock(dots=(Dot(process=R0, counter=0, timestamp=0),))
-    v2 = VClock(dots=(Dot(process=R1, counter=1, timestamp=0),))
+    v1 = VClock(dots=(Dot(process=R0, counter=0),))
+    v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 <= v2
     assert not (v1 >= v2)
 
 
 def test_eq_of_empties1():
-    v1 = VClock(dots=(Dot(process=R0, counter=0, timestamp=0),))
-    v2 = VClock(dots=(Dot(process=R1, counter=0, timestamp=0),))
+    v1 = VClock(dots=(Dot(process=R0, counter=0),))
+    v2 = VClock(dots=(Dot(process=R1, counter=0),))
 
     assert v1 >= v2 >= v1
     assert v1 == v2
@@ -55,8 +55,8 @@ def test_eq_of_empties1():
 
 
 def test_concurrence():
-    v1 = VClock(dots=(Dot(process=R0, counter=1, timestamp=0),))
-    v2 = VClock(dots=(Dot(process=R1, counter=1, timestamp=0),))
+    v1 = VClock(dots=(Dot(process=R0, counter=1),))
+    v2 = VClock(dots=(Dot(process=R1, counter=1),))
 
     assert v1 // v2 and v2 // v1
 

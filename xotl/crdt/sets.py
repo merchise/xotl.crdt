@@ -144,7 +144,7 @@ class USet(CvRDT):
         self.items.add(item)
 
     def remove(self, item) -> None:
-        '''Remove `item` to the set.
+        '''Remove `item` from the set.
 
         If `item` is not in (this replica's view of) the set, nothing happens.
 

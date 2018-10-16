@@ -12,10 +12,9 @@
 from typing import Tuple, Sequence
 
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from itertools import groupby
 from operator import attrgetter
-from time import monotonic
 
 from xotl.crdt.base import Process
 
@@ -28,7 +27,6 @@ class Dot:
     # process names should be unique across all processes
     process: Process
     counter: int
-    timestamp: float = field(compare=False)  # type: ignore
 
 
 @dataclass(frozen=True, init=False)
@@ -139,9 +137,7 @@ class VClock:
             key=get_process
         )
         dots = [
-            Dot(process,
-                max(d.counter for d in lgroup),
-                max(d.timestamp for d in lgroup))
+            Dot(process, max(d.counter for d in lgroup))
             for process, group in groups
             # convert group to a list so that we can do the double max above
             for lgroup in (list(group), )
@@ -155,23 +151,15 @@ class VClock:
         'Return the merge with other.'
         return self.merge(other)
 
-    def bump(self, process, *, _timestamp=None):
+    def bump(self, process):
         '''Return a new VC with the process's counter increased.'''
-        if _timestamp is None:
-            ts = monotonic()
-        else:
-            ts = _timestamp
         try:
             i = index(self.dots, process, key=attrgetter('process'))
             dots = list(self.dots)
-            if _timestamp is None:
-                # We should never go back in time, unless we're told to do so
-                # (but there be dragons).
-                ts = max(ts, dots[i].timestamp)
-            dots[i] = Dot(process, dots[i].counter + 1, ts)
+            dots[i] = Dot(process, dots[i].counter + 1)
         except ValueError:
             from heapq import merge
-            new = Dot(process, 1, ts)
+            new = Dot(process, 1)
             dots = merge(self.dots, [new], key=attrgetter('process'))
         result = VClock()
         object.__setattr__(result, 'dots', tuple(dots))

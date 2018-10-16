@@ -17,6 +17,10 @@ Unreleased.  Release 0.2.0
 - Add `~xotl.crdt.base.Process`:class: to capture the required interface of
   processes.
 
+- Remove the timestamp from the internal vector clock.  The timestamp is only
+  used in `~xotl.crdt.register.LWWRegister`:class:; it was wasteful to have it
+  everywhere else unused.
+
 
 2018-10-03.  Release 0.1.1
 --------------------------

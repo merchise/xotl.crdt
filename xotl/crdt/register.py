@@ -6,8 +6,9 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+from time import monotonic
 from xotl.crdt.base import CvRDT
-from xotl.crdt.clocks import VClock, Dot, monotonic
+from xotl.crdt.clocks import VClock, Dot
 
 
 class LWWRegister(CvRDT):
@@ -19,7 +20,8 @@ class LWWRegister(CvRDT):
 
     '''
     def init(self):
-        self.vclock = VClock([Dot(self.process, 0, 0)])
+        self.vclock = VClock([Dot(self.process, 0)])
+        self.timestamp = 0
         self.atom = None
 
     @property
@@ -29,10 +31,6 @@ class LWWRegister(CvRDT):
     @property
     def dot(self) -> Dot:
         return self.vclock.find(self.process)
-
-    @property
-    def timestamp(self) -> float:
-        return self.dot.timestamp
 
     def set(self, value, *, _timestamp=None):
         '''Set the `value` of the register.
@@ -44,10 +42,11 @@ class LWWRegister(CvRDT):
         '''
         hash(value)  # Check is immutable; mutable objs should raise an error
         if _timestamp is None:
-            ts = max(self.dot.timestamp, monotonic())
+            ts = max(self.timestamp, monotonic())
         else:
             ts = _timestamp
-        self.vclock = self.vclock.bump(self.process, _timestamp=ts)
+        self.vclock = self.vclock.bump(self.process)
+        self.timestamp = ts
         self.atom = value
 
     def __le__(self, other) -> bool:
@@ -96,8 +95,10 @@ class LWWRegister(CvRDT):
         - its vector clock dominates ours (it descends from ours and knows
           even more than we do).
 
-        - its vector clock is concurrent with ours but it's marked with a
+        - its vector clock is concurrent with ours but other is marked with a
           higher timestamp.
+
+        - none of the above, but other's process has higher priority
 
         '''
         if not isinstance(other, LWWRegister):
@@ -125,11 +126,10 @@ class LWWRegister(CvRDT):
             # I need to trick the vclock to update the timestamp of the
             # winning node.
             self.vclock += other.vclock
-            object.__setattr__(self.dot, 'timestamp', other.timestamp)
         else:
             ts = self.timestamp
             self.vclock += other.vclock
-            object.__setattr__(self.dot, 'timestamp', ts)
+        self.timestamp = max(self.timestamp, other.timestamp)
 
     def __repr__(self):
         return f"<LWWRegister: {self.value}; {self.process}, {self.vclock.simplified}>"
