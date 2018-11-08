@@ -109,7 +109,7 @@ class LWWRegister(CvRDT):
             return True
         elif self.vclock > other.vclock:
             return False
-        elif self.vclock // other.vclock or self.vclock == self.vclock:
+        elif self.vclock // other.vclock or self.vclock == other.vclock:
             if self.timestamp < other.timestamp:
                 return True
             elif self.timestamp > other.timestamp:
