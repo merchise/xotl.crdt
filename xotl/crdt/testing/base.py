@@ -64,7 +64,16 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
     and ``subjects``.  You may build the subjects with method
     `~BaseCRDTMachine.create_subjects`:meth:.
 
+    The model must have a reset method.
+
     '''
+    @rule()
+    def reset_all_replicas(self):
+        print('Reseting the replicas (and model)')
+        self.model.reset()
+        for replica in self.subjects:
+            replica.reset()
+
     @rule(receiver=BaseCRDTMachine.replicas)
     def run_synchronize(self, receiver):
         '''Command that synchronizes `receiver`.
@@ -95,6 +104,12 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
     `~BaseCRDTMachine.create_subjects`:meth:.
 
     '''
+    @rule()
+    def reset_all_replicas(self):
+        print('Reseting the replicas (synchronized based)')
+        for replica in self.subjects:
+            replica.reset()
+
     @rule()
     def run_synchronize(self):
         '''Synchronize all replicas and test they reach a consistent value.

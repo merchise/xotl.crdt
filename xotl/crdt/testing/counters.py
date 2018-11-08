@@ -20,6 +20,9 @@ class ModelCounter:
 
     '''
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.value = 0
 
     def incr(self):

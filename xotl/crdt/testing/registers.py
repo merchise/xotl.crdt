@@ -9,6 +9,7 @@
 from typing import Any
 from dataclasses import dataclass, field
 
+from xotl.crdt.base import Process
 from xotl.crdt.register import LWWRegister
 from xotl.crdt.testing.base import (
     ModelBasedCRDTMachine,
@@ -63,7 +64,12 @@ values = atoms | molecules
 class Register:
     value: Any = field(default=None)  # type: ignore
     timestamp: float = field(default=0)  # type: ignore
-    process: str = field(default=None)     # type: ignore
+    process: Process = field(default=None)     # type: ignore
+
+    def reset(self):
+        self.value = None
+        self.timestamp = 0
+        self.process = None
 
     def set(self, value, timestamp=None, process=None):
         '''Set the register's value.

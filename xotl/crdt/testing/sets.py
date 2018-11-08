@@ -32,6 +32,9 @@ values = atoms | molecules
 
 class Set:
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.value = set()
 
     def add(self, item):
