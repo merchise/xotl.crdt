@@ -179,7 +179,7 @@ class VClock:
         Basically forget about all the clock state.
 
         '''
-        self.dots = ()
+        object.__setattr__(self, 'dots', ())
 
 
 def index(a, x, key=None):
