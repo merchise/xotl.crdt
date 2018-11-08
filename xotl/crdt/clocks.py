@@ -169,10 +169,6 @@ class VClock:
         i = index(self.dots, process, key=attrgetter('process'))
         return self.dots[i]
 
-    @property
-    def simplified(self):
-        return VClock([d for d in self.dots if d.counter])
-
     def reset(self):
         '''Reset the clock.
 

@@ -132,7 +132,7 @@ class LWWRegister(CvRDT):
         self.timestamp = max(self.timestamp, other.timestamp)
 
     def __repr__(self):
-        return f"<LWWRegister: {self.value}; {self.process}, {self.vclock.simplified}>"
+        return f"<LWWRegister: {self.value}; {self.process}, {self.vclock}>"
 
     def reset(self, value=None):
         '''Reset the internal state of value.

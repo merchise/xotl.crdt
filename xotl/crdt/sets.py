@@ -154,7 +154,7 @@ class USet(CvRDT):
             self.items.remove(item)
 
     def __repr__(self):
-        return f"<USet: {self.value}; {self.process}, {self.vclock.simplified}>"
+        return f"<USet: {self.value}; {self.process}, {self.vclock}>"
 
     def reset(self, items: Iterable[Any] = None):
         'Reset the value with `items`.'
