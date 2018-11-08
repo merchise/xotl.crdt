@@ -123,12 +123,7 @@ class LWWRegister(CvRDT):
         if self << other:
             assert not (other << self)
             self.atom = other.value
-            # I need to trick the vclock to update the timestamp of the
-            # winning node.
-            self.vclock += other.vclock
-        else:
-            ts = self.timestamp
-            self.vclock += other.vclock
+        self.vclock += other.vclock
         self.timestamp = max(self.timestamp, other.timestamp)
 
     def __repr__(self):
