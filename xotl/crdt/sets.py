@@ -237,4 +237,6 @@ class ORSet(CvRDT):
         '''Reset the value of the set with `items`.
 
         '''
-        self.items.reset(items)
+        self.init()
+        for item in (items or []):
+            self.add(item)

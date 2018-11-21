@@ -106,7 +106,7 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
     '''
     @rule()
     def reset_all_replicas(self):
-        print('Reseting the replicas (synchronized based)')
+        print('Resetting the replicas (synchronized based)')
         for replica in self.subjects:
             replica.reset()
 

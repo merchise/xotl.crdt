@@ -9,6 +9,8 @@
 from typing import Any
 from dataclasses import dataclass, field
 
+from xoutil.symbols import Unset
+
 from xotl.crdt.sets import GSet, TwoPhaseSet, USet, ORSet
 from xotl.crdt.testing.base import (
     ModelBasedCRDTMachine,
@@ -34,8 +36,10 @@ class Set:
     def __init__(self):
         self.reset()
 
-    def reset(self):
+    def reset(self, item=Unset):
         self.value = set()
+        if item is not Unset:
+            self.add(item)
 
     def add(self, item):
         self.value.add(item)
@@ -51,6 +55,13 @@ class GSetMachine(ModelBasedCRDTMachine):
     def add_item(self, replica, item):
         self.model.add(item)
         replica.add(item)
+
+    @rule(item=values)
+    def reset_all_replicas_with_item(self, item):
+        print(f'Reseting the replicas (and model) with item: {item}')
+        self.model.reset(item)
+        for replica in self.subjects:
+            replica.reset({item})
 
 
 class TPSetMachine(SyncBasedCRDTMachine):
@@ -72,6 +83,14 @@ class TPSetMachine(SyncBasedCRDTMachine):
     def remove_item(self, replica, item):
         replica.remove(item)
 
+    @rule(item=items)
+    def reset_all_replicas_with_item(self, item):
+        print('Resetting the replicas with item: {item}')
+        for replica in self.subjects:
+            replica.reset({item})
+            assert item in replica.value, \
+                f'{item} is not present in {replica}'
+
 
 @dataclass(unsafe_hash=True)
 class Item:
@@ -85,26 +104,36 @@ class Item:
         return f"<{self.payload}{sign}>"
 
 
-class USetMachine(SyncBasedCRDTMachine):
-    def __init__(self):
-        super().__init__()
-        self.subjects = self.create_subjects(USet)
-        print('************ New USet case *************')
-
+class SyncBasedSetMachine(SyncBasedCRDTMachine):
     items = Bundle('items')
 
     @rule(target=items, value=st.integers(min_value=0))
     def generate_item(self, value):
         return Item(payload=value)
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    @rule(item=items)
+    def reset_all_replicas_with_item(self, item):
+        print('Resetting the replicas with item: {item}')
+        for replica in self.subjects:
+            replica.reset({item})
+            assert item in replica.value, \
+                f'{item} is not present in {replica}'
+
+
+class USetMachine(SyncBasedSetMachine):
+    def __init__(self):
+        super().__init__()
+        self.subjects = self.create_subjects(USet)
+        print('************ New USet case *************')
+
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
     def add_item(self, replica, item):
         assume(not item.already_added)
         print(f'Adding item {item}')
         replica.add(item)
         item.already_added = True
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
     def remove_item(self, replica, item):
         print(f'Remove item {item}; if present in {replica}')
         item.already_removed = item in replica.value
@@ -115,25 +144,19 @@ class USetMachine(SyncBasedCRDTMachine):
         print('------------ End USet case -------------')
 
 
-class ORSetMachine(SyncBasedCRDTMachine):
+class ORSetMachine(SyncBasedSetMachine):
     def __init__(self):
         super().__init__()
         self.subjects = self.create_subjects(ORSet)
         print('************ New ORSet case *************')
 
-    items = Bundle('items')
-
-    @rule(target=items, value=st.integers(min_value=0))
-    def generate_item(self, value):
-        return Item(payload=value)
-
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
     def add_item(self, replica, item):
         assume(not item.already_added)
         print(f'Adding item {item} in replica {replica}')
         replica.add(item)
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=items)
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
     def remove_item(self, replica, item):
         print(f'Remove item {item}; if present in {replica}')
         replica.remove(item)
@@ -141,7 +164,7 @@ class ORSetMachine(SyncBasedCRDTMachine):
 
     @rule(replica1=SyncBasedCRDTMachine.replicas,
           replica2=SyncBasedCRDTMachine.replicas,
-          item=items)
+          item=SyncBasedSetMachine.items)
     def simulate_concurrent_add_remove(self, replica1, replica2, item):
         assume(replica1 is not replica2)
         self.run_synchronize()
