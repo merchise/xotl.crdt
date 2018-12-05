@@ -75,24 +75,12 @@ class VClock:
     def __eq__(self, other: 'VClock') -> bool:  # type: ignore
         '''True if this vclock is the same as other.'''
         if isinstance(other, VClock):
-            # The looping structure is similar to __ge__; however, we must
-            # ensure every process present in `self` is also present in
-            # `other` with the same counter, thus the stronger conditional in
-            # the 'return'.  This is faster than ``self >= other >= self``.
-            theirs = deque(d for d in other.dots if d.counter)
-            ours = deque(d for d in self.dots if d.counter)
-            result = True
-            while theirs and ours and result:
-                their_dot = theirs.popleft()
-                our_dot = ours.popleft()
-                while ours and their_dot.process != our_dot.process:
-                    our_dot = ours.popleft()
-                if our_dot.process == their_dot.process:
-                    result = our_dot.counter == their_dot.counter
-                else:
-                    assert not ours
-                    result = False
-            return result and not ours and not theirs
+            # Equality requires that every process present in `self` must be
+            # present in `other` with the same counter.  This is faster than
+            # ``self >= other >= self``.
+            theirs = [d for d in other.dots if d.counter]
+            ours = [d for d in self.dots if d.counter]
+            return ours == theirs
         else:
             return NotImplemented
 
