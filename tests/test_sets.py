@@ -17,4 +17,4 @@ from xotl.crdt.testing.sets import (
 TestGSet = GSetMachine.TestCase
 TestTPSet = TPSetMachine.TestCase
 TestUSet = USetMachine.TestCase
-TestORset = ORSetMachine.TestCase
+TestORSet = ORSetMachine.TestCase

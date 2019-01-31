@@ -18,7 +18,7 @@ from xotl.crdt.testing.base import (
 )
 
 from hypothesis import strategies as st, assume
-from hypothesis.stateful import rule, Bundle
+from hypothesis.stateful import rule, Bundle, consumes
 
 
 atoms = (
@@ -126,14 +126,30 @@ class USetMachine(SyncBasedSetMachine):
         self.subjects = self.create_subjects(USet)
         print('************ New USet case *************')
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
+    added_items = Bundle('added_items')
+
+    # We consume an item from the 'items' bundle and add it to the 'added
+    # items'.  The remove_item method takes only from the last bundle.
+    #
+    # This only ensures the item was previously added; but we don't know to
+    # which replica.  Furthermore, we don't know if the replicas were reset
+    # after adding items.  So this strategy doesn't remove the possibility of
+    # trying to remove an item which is not in the replica; and that's OK.
+    #
+    # At the same time we reduce the chance of generating invalid examples
+    # (i.e not passing the assume in add_item)
+
+    @rule(replica=SyncBasedCRDTMachine.replicas,
+          item=consumes(SyncBasedSetMachine.items),
+          target=added_items)
     def add_item(self, replica, item):
         assume(not item.already_added)
         print(f'Adding item {item}')
         replica.add(item)
         item.already_added = True
+        return item
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
+    @rule(replica=SyncBasedCRDTMachine.replicas, item=added_items)
     def remove_item(self, replica, item):
         print(f'Remove item {item}; if present in {replica}')
         item.already_removed = item in replica.value
@@ -150,7 +166,8 @@ class ORSetMachine(SyncBasedSetMachine):
         self.subjects = self.create_subjects(ORSet)
         print('************ New ORSet case *************')
 
-    @rule(replica=SyncBasedCRDTMachine.replicas, item=SyncBasedSetMachine.items)
+    @rule(replica=SyncBasedCRDTMachine.replicas,
+          item=consumes(SyncBasedSetMachine.items))
     def add_item(self, replica, item):
         assume(not item.already_added)
         print(f'Adding item {item} in replica {replica}')
