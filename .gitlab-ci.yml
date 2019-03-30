@@ -78,6 +78,9 @@ run coverage tests:
     - pip install tox
     - tox -e 3.6-coverage
   allow_failure: true
+  only:
+    - master
+    - merge_requests
 
 
 check signature of tag:
