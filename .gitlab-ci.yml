@@ -9,35 +9,39 @@ stages:
   - publish
 
 check code smells:
-  script: merchise_lint3
+  image: python:3.6-alpine
+  script:
+    - pip install merchise.lint==0.11
+    - merchise_lint3
   stage: pre-check
   allow_failure: true
-  tags:
-    - merchise-lint
   only:
     - branches
 
 .run_tox_tests: &run_tox_tests
+  image: python:$PYTHON-alpine
   stage: test
   script:
-    - tox -e $PYTHON-unit
-  tags:
-    - tox
+    - pip install tox
+    - tox -e system-unit
+
 
 .run_tox_staticcheck: &run_tox_staticcheck
+  image: python:3.6-alpine
   stage: pre-check
-  allow_failure: true
   script:
+    - apk add g++
+    - pip install tox
     - tox -e 3.6-staticcheck
-  tags:
-    - tox
+
 
 .run_tox_doctest: &run_tox_doctest
+  image: python:3.6-alpine
   stage: test
   script:
+    - apk add make
+    - pip install tox
     - tox -e 3.6-doctest
-  tags:
-    - virtualenv
 
 
 run tests with Python 3.6:
@@ -69,22 +73,21 @@ run doctests:
 
 
 check signature of tag:
+  image: alpine
   stage: check
   script:
+    - apk add git gnupg
+    - gpg --recv-key $GNUPG_KEY
     - git verify-tag $CI_COMMIT_REF_NAME
-  tags:
-    - git
-    - gpg
   only:
     - tags
 
 build source distribution:
+  image: python:3.6-alpine
   stage: build
   script:
     - rm -f dist/*
     - python setup.py sdist
-  tags:
-    - python
   artifacts:
     paths:
       - dist/
@@ -92,12 +95,11 @@ build source distribution:
     - tags
 
 build binary distribution:
+  image: python:3.6-alpine
   stage: build
   script:
-    - rm -f dist/*
+    - pip install wheel
     - python setup.py bdist_wheel
-  tags:
-    - wheel
   artifacts:
     paths:
       - dist/
@@ -123,11 +125,11 @@ publish_locally:
 
 
 publish_pypi:
+  image: python:3.6-alpine
   stage: publish
   script:
-    - twine upload dist/*
-  tags:
-    - twine
+    - pip install twine
+    - twine upload -u "$PYPI_USERNAME" -p "$PYPI_PASSWORD" dist/*
   only:
     - tags
   dependencies:
@@ -140,9 +142,11 @@ publish_pypi:
 
 
 build documentation:
+  image: python:3.6-alpine
   stage: build doc
   script:
-    - rm -rf `pipenv --venv`
+    - apk add g++ make
+    - pip install pipenv
     - pipenv install --dev
     - source `pipenv --venv`/bin/activate
     - make -C docs/ html
@@ -152,8 +156,6 @@ build documentation:
     paths:
       - $CI_PROJECT_NAME-$CI_COMMIT_SHA.tar.bz2
     expire_in: 4 days
-  tags:
-    - pipenv
   only:
     - tags
     - /^releases-/
