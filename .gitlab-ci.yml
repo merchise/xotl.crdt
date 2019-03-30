@@ -16,7 +16,8 @@ check code smells:
   stage: pre-check
   allow_failure: true
   only:
-    - branches
+    - master
+    - merge_requests
 
 .run_tox_tests: &run_tox_tests
   image: python:$PYTHON-alpine
@@ -24,7 +25,6 @@ check code smells:
   script:
     - pip install tox
     - tox -e system-unit
-
 
 .run_tox_staticcheck: &run_tox_staticcheck
   image: python:3.6-alpine
@@ -34,7 +34,6 @@ check code smells:
     - pip install tox
     - tox -e 3.6-staticcheck
 
-
 .run_tox_doctest: &run_tox_doctest
   image: python:3.6-alpine
   stage: test
@@ -43,33 +42,34 @@ check code smells:
     - pip install tox
     - tox -e 3.6-doctest
 
-
 run tests with Python 3.6:
   <<: *run_tox_tests
   variables:
     PYTHON: "3.6"
   only:
-    - branches
+    - master
+    - merge_requests
 
 run tests with Python 3.7:
   <<: *run_tox_tests
   variables:
     PYTHON: "3.7"
-  allow_failure: true
   only:
-    - branches
+    - master
+    - merge_requests
 
 
 run static checks:
   <<: *run_tox_staticcheck
   only:
-    - branches
+    - master
+    - merge_requests
 
 run doctests:
   <<: *run_tox_doctest
   only:
-    - branches
-  allow_failure: true
+    - master
+    - merge_requests
 
 
 check signature of tag:
