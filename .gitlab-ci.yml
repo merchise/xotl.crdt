@@ -58,7 +58,6 @@ run tests with Python 3.7:
     - master
     - merge_requests
 
-
 run static checks:
   <<: *run_tox_staticcheck
   only:
@@ -70,6 +69,15 @@ run doctests:
   only:
     - master
     - merge_requests
+
+
+run coverage tests:
+  image: python:3.6-alpine
+  stage: test
+  script:
+    - pip install tox
+    - tox -e 3.6-coverage
+  allow_failure: true
 
 
 check signature of tag:
