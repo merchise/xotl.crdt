@@ -24,7 +24,7 @@ Based on a full synchronization
   replicas must have the same value.  Notice this **is not** coordination for
   agreement.
 
-.. autoclass:: SyncBasedCRDTMachine
+  .. autoclass:: SyncBasedCRDTMachine
      :members: run_synchronize
 
 
