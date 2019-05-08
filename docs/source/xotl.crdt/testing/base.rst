@@ -11,13 +11,13 @@ There are two approaches:
 
 Based on a test-model
 
-  Each action is also record in a `model` object that maintains the expected
-  state a replica must reach when `synchronized.
+  Each action is also recorded in a `model` object that maintains the expected
+  state a replica must reach when `synchronized`.
 
   .. autoclass:: ModelBasedCRDTMachine
      :members: run_synchronize
 
-Based on a "full" synchronization
+Based on a full synchronization
 
   The synchronization is done by a `gossip protocol
   <SyncBasedCRDTMachine.run_synchronize>`:meth:; after synchronization all
