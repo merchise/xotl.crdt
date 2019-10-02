@@ -13,12 +13,13 @@ from hypothesis.stateful import rule
 
 
 class ModelCounter:
-    '''A simple model counter.
+    """A simple model counter.
 
     Both `GCounterMachine`:class: and `PNCounterMachine`:class: use a single
     instance of this model to keep the expected state of the set of replicas.
 
-    '''
+    """
+
     def __init__(self):
         self.reset()
 
@@ -26,12 +27,12 @@ class ModelCounter:
         self.value = 0
 
     def incr(self):
-        '''Increment the model's value by 1.'''
+        """Increment the model's value by 1."""
         self.value += 1
         return self.value
 
     def decr(self):
-        '''Decrement the model's value by 1.'''
+        """Decrement the model's value by 1."""
         self.value -= 1
         return self.value
 
@@ -46,11 +47,11 @@ class CounterMachine(ModelBasedCRDTMachine):
 
     @rule(replica=ModelBasedCRDTMachine.replicas)
     def run_incr(self, replica):
-        '''Increment the value of a single random `replica`.
+        """Increment the value of a single random `replica`.
 
         We also increment the model's.
 
-        '''
+        """
         value = replica.value
         replica.incr()
         assert value + 1 == replica.value
@@ -70,11 +71,11 @@ class PNCounterMachine(CounterMachine):
 
     @rule(replica=ModelBasedCRDTMachine.replicas)
     def run_decr(self, replica):
-        '''Decrement the value of a single random `replica`.
+        """Decrement the value of a single random `replica`.
 
         We also decrement the model's.
 
-        '''
+        """
         value = replica.value
         replica.decr()
         assert value - 1 == replica.value

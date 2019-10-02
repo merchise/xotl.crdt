@@ -6,9 +6,9 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-'''Implements the Vector Clocks.
+"""Implements the Vector Clocks.
 
-'''
+"""
 from typing import Tuple, Sequence
 
 from collections import deque
@@ -21,9 +21,10 @@ from xotl.crdt.base import Process
 
 @dataclass(frozen=True, order=False, eq=True)
 class Dot:
-    '''A component on the vector clock.
+    """A component on the vector clock.
 
-    '''
+    """
+
     # process names should be unique across all processes
     process: Process
     counter: int
@@ -35,15 +36,16 @@ class VClock:
 
     def __init__(self, dots: Sequence[Dot] = None) -> None:
         if dots:
-            assert len([d.process for d in dots]) == len({d.process for d in dots}), \
-                f'Repeated processes in {dots!r}'
+            assert len([d.process for d in dots]) == len(
+                {d.process for d in dots}
+            ), f"Repeated processes in {dots!r}"
         # Avoid silly counters.
         dots = [d for d in (dots or []) if d.counter >= 0]
-        dots.sort(key=attrgetter('process'))
-        object.__setattr__(self, 'dots', tuple(dots))
+        dots.sort(key=attrgetter("process"))
+        object.__setattr__(self, "dots", tuple(dots))
 
-    def __ge__(self, other: 'VClock') -> bool:
-        '''True if this vclock descends (happens after) from other.'''
+    def __ge__(self, other: "VClock") -> bool:
+        """True if this vclock descends (happens after) from other."""
         if isinstance(other, VClock):
             # Remember, that '.dots' are ordered by 'process'; with this in
             # mind the algorithm is easy to follow.
@@ -72,8 +74,8 @@ class VClock:
         else:
             return NotImplemented
 
-    def __eq__(self, other: 'VClock') -> bool:  # type: ignore
-        '''True if this vclock is the same as other.'''
+    def __eq__(self, other: "VClock") -> bool:  # type: ignore
+        """True if this vclock is the same as other."""
         if isinstance(other, VClock):
             # Equality requires that every process present in `self` must be
             # present in `other` with the same counter.  This is faster than
@@ -84,21 +86,21 @@ class VClock:
         else:
             return NotImplemented
 
-    def __floordiv__(self, other: 'VClock') -> bool:
-        '''True if neither self descends from other nor other from self.
+    def __floordiv__(self, other: "VClock") -> bool:
+        """True if neither self descends from other nor other from self.
 
         This means that self and other represent concurrent events in
         different replicas.  In some texts this is represented as ``a || b``,
         here we have ``a // b``.
 
-        '''
+        """
         return not (self <= other) and not (other <= self)
 
-    def __le__(self, other: 'VClock') -> bool:
+    def __le__(self, other: "VClock") -> bool:
         return other >= self
 
     def __gt__(self, other):
-        '''True if ``self >= other`` but not viceversa.'''
+        """True if ``self >= other`` but not viceversa."""
         if isinstance(other, VClock):
             # Is this the same as 'self != other and self >= other'?
             return not (other >= self) and self >= other
@@ -106,7 +108,7 @@ class VClock:
             return NotImplemented
 
     def __lt__(self, other):
-        '''True if ``self <= other`` but not viceversa.'''
+        """True if ``self <= other`` but not viceversa."""
         if isinstance(other, VClock):
             # Is this the same as 'self != other and self <= other'?
             return not (other <= self) and self <= other
@@ -116,59 +118,62 @@ class VClock:
     def __bool__(self):
         return bool(self.dots)
 
-    def merge(self, *others: 'VClock') -> 'VClock':
-        '''Return the least possible common descendant.'''
+    def merge(self, *others: "VClock") -> "VClock":
+        """Return the least possible common descendant."""
         from heapq import merge
-        get_process = attrgetter('process')
+
+        get_process = attrgetter("process")
         groups = groupby(
             merge(self.dots, *(o.dots for o in others), key=get_process),
-            key=get_process
+            key=get_process,
         )
         dots = [
             Dot(process, max(d.counter for d in lgroup))
             for process, group in groups
             # convert group to a list so that we can do the double max above
-            for lgroup in (list(group), )
+            for lgroup in (list(group),)
         ]
         # Silly little trick to avoid sorting what is sorted already
         result = VClock()
-        object.__setattr__(result, 'dots', tuple(dots))
+        object.__setattr__(result, "dots", tuple(dots))
         return result
 
     def __add__(self, other):
-        'Return the merge with other.'
+        "Return the merge with other."
         return self.merge(other)
 
     def bump(self, process):
-        '''Return a new VC with the process's counter increased.'''
+        """Return a new VC with the process's counter increased."""
         try:
-            i = index(self.dots, process, key=attrgetter('process'))
+            i = index(self.dots, process, key=attrgetter("process"))
             dots = list(self.dots)
             dots[i] = Dot(process, dots[i].counter + 1)
         except ValueError:
             from heapq import merge
+
             new = Dot(process, 1)
-            dots = merge(self.dots, [new], key=attrgetter('process'))
+            dots = merge(self.dots, [new], key=attrgetter("process"))
         result = VClock()
-        object.__setattr__(result, 'dots', tuple(dots))
+        object.__setattr__(result, "dots", tuple(dots))
         return result
 
     def find(self, process: Process) -> Dot:
-        i = index(self.dots, process, key=attrgetter('process'))
+        i = index(self.dots, process, key=attrgetter("process"))
         return self.dots[i]
 
     def reset(self):
-        '''Reset the clock.
+        """Reset the clock.
 
         Basically forget about all the clock state.
 
-        '''
-        object.__setattr__(self, 'dots', ())
+        """
+        object.__setattr__(self, "dots", ())
 
 
 def index(a, x, key=None):
-    'Locate the leftmost value exactly equal to x'
+    "Locate the leftmost value exactly equal to x"
     from bisect import bisect_left
+
     if not key:
         i = bisect_left(a, x)
         if i != len(a) and a[i] == x:

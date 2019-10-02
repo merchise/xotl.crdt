@@ -20,7 +20,7 @@ REPLICA_NODES = list(range(5))
 
 
 class BaseCRDTMachine(RuleBasedStateMachine):
-    '''Base CRDT machine.
+    """Base CRDT machine.
 
     It defines the `~hypothesis.stateful.Bundle`:class: 'replica' that chooses
     any of the replicas under test.  It doesn't perform any assertions.
@@ -28,8 +28,9 @@ class BaseCRDTMachine(RuleBasedStateMachine):
     See subclasses `ModelBasedCRDTMachine`:class: and
     `SyncBasedCRDTMachine`:class:.
 
-    '''
-    replicas = Bundle('replicas')
+    """
+
+    replicas = Bundle("replicas")
     process_names = st.sampled_from(REPLICA_NODES)
 
     @rule(target=replicas, name=process_names)
@@ -41,7 +42,7 @@ class BaseCRDTMachine(RuleBasedStateMachine):
         assert crdt == from_state(get_state(crdt))
 
     def create_subjects(self, cls):
-        '''Return a tuple of instances of `cls`.
+        """Return a tuple of instances of `cls`.
 
         :param cls: a callable that takes keyword argument 'process' and
                     returns a replica object.
@@ -49,12 +50,12 @@ class BaseCRDTMachine(RuleBasedStateMachine):
         :returns: a tuple containing the result of several calls to `cls` with
                   different process names.
 
-        '''
-        return tuple(cls(process=Process(f'R{i}', i)) for i in REPLICA_NODES)
+        """
+        return tuple(cls(process=Process(f"R{i}", i)) for i in REPLICA_NODES)
 
 
 class ModelBasedCRDTMachine(BaseCRDTMachine):
-    '''Model based CRDT rule-based state machine.
+    """Model based CRDT rule-based state machine.
 
     Defines the rule `run_synchronize` which receives a replica that will
     receive the state of all other replicas merge it with its own state and
@@ -66,23 +67,24 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
 
     The model must have a reset method.
 
-    '''
+    """
+
     @rule()
     def reset_all_replicas(self):
-        print('Reseting the replicas (and model)')
+        print("Reseting the replicas (and model)")
         self.model.reset()
         for replica in self.subjects:
             replica.reset()
 
     @rule(receiver=BaseCRDTMachine.replicas)
     def run_synchronize(self, receiver):
-        '''Command that synchronizes `receiver`.
+        """Command that synchronizes `receiver`.
 
         `receiver` is any of the replica objects; this command simulates the
         actions of it receiving the state of all other replicas *in any order*
         and compares the resulting state with expected state.
 
-        '''
+        """
         senders = [which for which in self.subjects if receiver is not which]
         shuffle(senders)
         before_merge = []
@@ -92,27 +94,27 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
             receiver.merge(from_state(state))
             assert sender <= receiver
         model = self.model
-        assert receiver.value == model.value, \
-            f"{receiver.value} != {model.value}"
+        assert receiver.value == model.value, f"{receiver.value} != {model.value}"
 
 
 class SyncBasedCRDTMachine(BaseCRDTMachine):
-    '''Synchronization based state machine.
+    """Synchronization based state machine.
 
     Subclasses must implement an ``__init__`` the to the attributes
     ``subjects``.  You may build the subjects with method
     `~BaseCRDTMachine.create_subjects`:meth:.
 
-    '''
+    """
+
     @rule()
     def reset_all_replicas(self):
-        print('Resetting the replicas (synchronized based)')
+        print("Resetting the replicas (synchronized based)")
         for replica in self.subjects:
             replica.reset()
 
     @rule()
     def run_synchronize(self):
-        '''Synchronize all replicas and test they reach a consistent value.
+        """Synchronize all replicas and test they reach a consistent value.
 
         All replicas are *randomly* placed in a line::
 
@@ -129,7 +131,7 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
         Notice that there are replicas who never exchange messages; yet they
         must have reached the same conclusion.
 
-        '''
+        """
         replicas = [which for which in self.subjects]
         shuffle(replicas)
         before = deepcopy(replicas)  # noqa
@@ -143,7 +145,7 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
             assert sender <= receiver
         first = replicas[0]
         assert all(r.value == s.value for r, s in product(replicas, replicas))
-        print(f'Agreement reached: {first.value}')
+        print(f"Agreement reached: {first.value}")
         assert all(r <= s <= r for r, s in product(replicas, replicas))
 
     def teardown(self):

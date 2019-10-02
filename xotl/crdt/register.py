@@ -12,13 +12,14 @@ from xotl.crdt.clocks import VClock, Dot
 
 
 class LWWRegister(CvRDT):
-    '''The Last-Write-Wins Register.
+    """The Last-Write-Wins Register.
 
     If two processes set a value concurrently (as per vector clock counter)
     and with the same time stamp.  The process with highest `priority
     <xotl.crdt.base.Process>`:class: wins.
 
-    '''
+    """
+
     def init(self):
         self.vclock = VClock([Dot(self.process, 0)])
         self.timestamp = 0
@@ -33,13 +34,13 @@ class LWWRegister(CvRDT):
         return self.vclock.find(self.process)
 
     def set(self, value, *, _timestamp=None):
-        '''Set the `value` of the register.
+        """Set the `value` of the register.
 
         `value` should be an immutable object.  Putting a mutable object may
         lead to unexpected behavior (specially if it implements an unsafe
         hash).
 
-        '''
+        """
         hash(value)  # Check is immutable; mutable objs should raise an error
         if _timestamp is None:
             ts = max(self.timestamp, monotonic())
@@ -83,12 +84,14 @@ class LWWRegister(CvRDT):
         if isinstance(other, LWWRegister):
             return self.vclock // other.vclock
         else:
-            raise TypeError(f"'//' not supported for instances "
-                            f"of type '{type(self).__name__}' and "
-                            f"type '{type(other).__name__}'")
+            raise TypeError(
+                f"'//' not supported for instances "
+                f"of type '{type(self).__name__}' and "
+                f"type '{type(other).__name__}'"
+            )
 
     def __lshift__(self, other) -> bool:
-        '''True is `other` wins.
+        """True is `other` wins.
 
         `other` wins if:
 
@@ -100,11 +103,13 @@ class LWWRegister(CvRDT):
 
         - none of the above, but other's process has higher priority
 
-        '''
+        """
         if not isinstance(other, LWWRegister):
-            raise TypeError(f"'<<' not supported for instances "
-                            f"of type '{type(self).__name__}' and "
-                            f"type '{type(other).__name__}'")
+            raise TypeError(
+                f"'<<' not supported for instances "
+                f"of type '{type(self).__name__}' and "
+                f"type '{type(other).__name__}'"
+            )
         if self.vclock < other.vclock:
             return True
         elif self.vclock > other.vclock:
@@ -119,7 +124,7 @@ class LWWRegister(CvRDT):
         else:
             assert False
 
-    def merge(self, other: 'LWWRegister') -> None:  # type: ignore
+    def merge(self, other: "LWWRegister") -> None:  # type: ignore
         if self << other:
             assert not (other << self)
             self.atom = other.value
@@ -130,7 +135,7 @@ class LWWRegister(CvRDT):
         return f"<LWWRegister: {self.value}; {self.process}, {self.vclock}>"
 
     def reset(self, value=None):
-        '''Reset the internal state of value.
+        """Reset the internal state of value.
 
         This method should only be used within the boundaries of a
         coordination controlled layer.  Notice it may not be sufficient for a
@@ -138,6 +143,6 @@ class LWWRegister(CvRDT):
         nodes.  You probably only need to call this when removing/adding an
         process from the cluster.
 
-        '''
+        """
         self.vclock = VClock()
         self.atom = value

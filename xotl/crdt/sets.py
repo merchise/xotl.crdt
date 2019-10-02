@@ -12,9 +12,10 @@ from xotl.crdt.clocks import VClock, Dot
 
 
 class GSet(CvRDT):
-    '''The Grow-only set.
+    """The Grow-only set.
 
-    '''
+    """
+
     def init(self):
         self.items = set()
 
@@ -32,15 +33,15 @@ class GSet(CvRDT):
             return NotImplemented
         return self.process == other.process and self.items == other.items
 
-    def merge(self, other: 'GSet') -> None:  # type: ignore
+    def merge(self, other: "GSet") -> None:  # type: ignore
         self.items |= other.value
 
     def add(self, item):
-        'Add `item` to the set.'
+        "Add `item` to the set."
         self.items.add(item)
 
     def reset(self, items: Iterable[Any] = None):
-        'Reset the set with `items`.'
+        "Reset the set with `items`."
         self.items = set(items or [])
 
 
@@ -51,7 +52,7 @@ class TwoPhaseSet(CvRDT):
 
     @property
     def value(self) -> frozenset:
-        '''The current value.'''
+        """The current value."""
         return frozenset(self.living.value - self.dead.value)
 
     def __le__(self, other) -> bool:
@@ -62,25 +63,27 @@ class TwoPhaseSet(CvRDT):
     def __eq__(self, other) -> bool:
         if not isinstance(other, TwoPhaseSet):
             return NotImplemented
-        return (self.process == other.process and
-                self.living == other.living and
-                self.dead == other.dead)
+        return (
+            self.process == other.process
+            and self.living == other.living
+            and self.dead == other.dead
+        )
 
-    def merge(self, other: 'TwoPhaseSet') -> None:  # type: ignore
+    def merge(self, other: "TwoPhaseSet") -> None:  # type: ignore
         self.living.items |= other.living.items
         self.dead.items |= other.dead.items
 
     def add(self, item) -> None:
-        'Add `item` to the set.'
+        "Add `item` to the set."
         self.living.add(item)
 
     def remove(self, item) -> bool:
-        '''Remove `item` to the set.
+        """Remove `item` to the set.
 
         If `item` is not in (this replica's view of) the set, do nothing.  If
         it was, remove it and the item will never in the set again.
 
-        '''
+        """
         if item in self.value:
             self.dead.add(item)
             return True
@@ -88,18 +91,19 @@ class TwoPhaseSet(CvRDT):
             return False
 
     def reset(self, items: Iterable[Any] = None):
-        '''Reset to an initial value of `items`.'''
+        """Reset to an initial value of `items`."""
         self.living.reset(items)
         self.dead.reset()
 
 
 class USet(CvRDT):
-    '''The USet.
+    """The USet.
 
     .. warning:: You must be careful using this directly.  You MUST never add
        the same item twice.  This as way to implement the `ORSet`:class:.
 
-    '''
+    """
+
     def init(self):
         self.vclock = VClock()
         self.items = set()
@@ -120,7 +124,7 @@ class USet(CvRDT):
         else:
             return NotImplemented
 
-    def merge(self, other: 'USet') -> None:  # type: ignore
+    def merge(self, other: "USet") -> None:  # type: ignore
         if self.vclock >= other.vclock:
             # Our history contains all of others so we can stay the same.
             pass
@@ -139,16 +143,16 @@ class USet(CvRDT):
             assert False
 
     def add(self, item) -> None:
-        '''Add `item` to the set.'''
+        """Add `item` to the set."""
         self.vclock = self.vclock.bump(self.process)
         self.items.add(item)
 
     def remove(self, item) -> None:
-        '''Remove `item` from the set.
+        """Remove `item` from the set.
 
         If `item` is not in (this replica's view of) the set, nothing happens.
 
-        '''
+        """
         if item in self.items:
             self.vclock = self.vclock.bump(self.process)
             self.items.remove(item)
@@ -157,15 +161,16 @@ class USet(CvRDT):
         return f"<USet: {self.value}; {self.process}, {self.vclock}>"
 
     def reset(self, items: Iterable[Any] = None):
-        'Reset the value with `items`.'
+        "Reset the value with `items`."
         self.vlock = VClock()
         self.items = set(items or [])
 
 
 class ORSet(CvRDT):
-    '''The Observed-Remove Set.
+    """The Observed-Remove Set.
 
-    '''
+    """
+
     def init(self):
         self.items: USet = USet(process=self.process)
         self.ticks = 0
@@ -178,13 +183,15 @@ class ORSet(CvRDT):
 
     def __eq__(self, other) -> bool:
         if isinstance(other, ORSet):
-            return (self.process == other.process and
-                    self.items == other.items and
-                    self.ticks == other.ticks)
+            return (
+                self.process == other.process
+                and self.items == other.items
+                and self.ticks == other.ticks
+            )
         else:
             return NotImplemented
 
-    def merge(self, other: 'ORSet') -> None:  # type: ignore
+    def merge(self, other: "ORSet") -> None:  # type: ignore
         self.items.merge(other.items)
 
     @property
@@ -203,9 +210,9 @@ class ORSet(CvRDT):
             return 0
 
     def add(self, item):
-        '''Add `item` to the set.
+        """Add `item` to the set.
 
-        '''
+        """
         # USet requires unique items, we expect the processes names are unique
         # in the cluster and each have an ever increasing tick.
         self.ticks += 1
@@ -213,14 +220,14 @@ class ORSet(CvRDT):
         self.items.add(x)
 
     def remove(self, item):
-        '''Remove `item` from the set.
+        """Remove `item` from the set.
 
         We remove the **observed instances** of `item` in this replica; if
         this replica hasn't any, do nothing.  This also means that an
         ``add(x)`` at one replica concurrent with a ``remove(x)`` at another,
         will result in the item being kept.
 
-        '''
+        """
         xs = [x for x in self.items.value if x[0] == item]
         if xs:
             # I have to hack the internal VClock of 'self.items' to ensure
@@ -228,15 +235,15 @@ class ORSet(CvRDT):
             counter = self.dot_counter
             for x in xs:
                 self.items.remove(x)
-            object.__setattr__(self.dot, 'counter', counter + 1)
+            object.__setattr__(self.dot, "counter", counter + 1)
 
     def __repr__(self):
         return f"<ORSet: {self.value}; {self.process}, {self.items}>"
 
     def reset(self, items: Iterable[Any] = None):
-        '''Reset the value of the set with `items`.
+        """Reset the value of the set with `items`.
 
-        '''
+        """
         self.init()
-        for item in (items or []):
+        for item in items or []:
             self.add(item)

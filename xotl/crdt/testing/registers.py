@@ -11,10 +11,7 @@ from dataclasses import dataclass, field
 
 from xotl.crdt.base import Process
 from xotl.crdt.register import LWWRegister
-from xotl.crdt.testing.base import (
-    ModelBasedCRDTMachine,
-    SyncBasedCRDTMachine
-)
+from xotl.crdt.testing.base import ModelBasedCRDTMachine, SyncBasedCRDTMachine
 from time import monotonic
 
 from hypothesis import strategies as st
@@ -22,8 +19,9 @@ from hypothesis.stateful import rule
 
 
 atoms = (
-    st.integers() |
-    st.booleans() |
+    st.integers()
+    | st.booleans()
+    |
     # float('nan') == float('nan') is False
     st.floats(allow_nan=False)
 )
@@ -64,7 +62,7 @@ values = atoms | molecules
 class Register:
     value: Any = field(default=None)  # type: ignore
     timestamp: float = field(default=0)  # type: ignore
-    process: Process = field(default=None)     # type: ignore
+    process: Process = field(default=None)  # type: ignore
 
     def reset(self):
         self.value = None
@@ -72,7 +70,7 @@ class Register:
         self.process = None
 
     def set(self, value, timestamp=None, process=None):
-        '''Set the register's value.
+        """Set the register's value.
 
         If `timestamp` is none defaults the result of
         `~xotl.crdt.clocks.monotonic`:func:.
@@ -83,7 +81,7 @@ class Register:
 
         Return True if the value was updated.
 
-        '''
+        """
         if timestamp is None:
             timestamp = monotonic()
         if timestamp > self.timestamp:
@@ -101,7 +99,7 @@ class Register:
 
 
 class LWWRegisterMachine(ModelBasedCRDTMachine):
-    '''A simple LWWRegister stateful test machine.
+    """A simple LWWRegister stateful test machine.
 
     Since we run tests in a single process, each call to `run_set`:meth:
     happens after the previous, so we're allowed to update the test-model with
@@ -110,7 +108,8 @@ class LWWRegisterMachine(ModelBasedCRDTMachine):
     See `LWWRegisterConcurrentMachine`:class: for a machine that simulate
     concurrent and conflicting updates.
 
-    '''
+    """
+
     def __init__(self):
         super().__init__()
         self.model = Register()
@@ -118,43 +117,43 @@ class LWWRegisterMachine(ModelBasedCRDTMachine):
 
     @rule(replica=ModelBasedCRDTMachine.replicas, value=values)
     def run_set(self, replica, value):
-        '''Set `value` in a single replica.'''
+        """Set `value` in a single replica."""
         ts = monotonic()
         replica.set(value, _timestamp=ts)
         assert value == replica.value
-        self.model.set(value, timestamp=replica.timestamp,
-                       process=replica.process)
+        self.model.set(value, timestamp=replica.timestamp, process=replica.process)
 
 
 class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
-    '''A concurrent LWWRegister stateful test machine.
+    """A concurrent LWWRegister stateful test machine.
 
-    '''
+    """
+
     def __init__(self):
         super().__init__()
         self.time = 0
         self.subjects = self.create_subjects(LWWRegister)
-        print('**************** New case ********************')
+        print("**************** New case ********************")
 
     @rule(replica=SyncBasedCRDTMachine.replicas, value=values)
     def run_possibly_concurrent_set(self, replica, value):
-        '''Set value at a replica at the current time.
+        """Set value at a replica at the current time.
 
         Current time is only increased by calling `tick`:meth:.
 
         Notice that two consecutive calls with different replicas and values
         result in a (temporary) divergence of the replicas.
 
-        '''
-        print(f'Set value {value} at replica {replica.process} at {self.time}')
+        """
+        print(f"Set value {value} at replica {replica.process} at {self.time}")
         replica.set(value, _timestamp=self.time)
 
     @rule()
     def tick(self):
-        'Increase the current timer by 1.'
+        "Increase the current timer by 1."
         self.time += 1
-        print(f'Tick {self.time - 1} -> {self.time}')
+        print(f"Tick {self.time - 1} -> {self.time}")
 
     def teardown(self):
-        print('---------------- End case --------------------')
+        print("---------------- End case --------------------")
         super().teardown()
