@@ -115,7 +115,7 @@ class VClock:
         else:
             return NotImplemented
 
-    def __bool__(self):
+    def __bool__(self):  # pragma: no cover
         return bool(self.dots)
 
     def merge(self, *others: "VClock") -> "VClock":
@@ -170,8 +170,8 @@ class VClock:
         object.__setattr__(self, "dots", ())
 
 
-def index(a, x, key=None):
-    "Locate the leftmost value exactly equal to x"
+def index(a, x, key=None):  # pragma: no cover
+    "Locate the leftmost value exactly equal to x."
     from bisect import bisect_left
 
     if not key:

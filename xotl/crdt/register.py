@@ -30,7 +30,7 @@ class LWWRegister(CvRDT):
         return self.atom
 
     @property
-    def dot(self) -> Dot:
+    def dot(self) -> Dot:  # pragma: no cover
         return self.vclock.find(self.process)
 
     def set(self, value, *, _timestamp=None):
@@ -122,7 +122,7 @@ class LWWRegister(CvRDT):
             else:
                 return self.process < other.process
         else:
-            assert False
+            assert False  # pragma: no cover
 
     def merge(self, other: "LWWRegister") -> None:  # type: ignore
         if self << other:

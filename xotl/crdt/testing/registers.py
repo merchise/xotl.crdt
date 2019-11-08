@@ -69,11 +69,8 @@ class Register:
         self.timestamp = 0
         self.process = None
 
-    def set(self, value, timestamp=None, process=None):
+    def set(self, value, timestamp, process=None):
         """Set the register's value.
-
-        If `timestamp` is none defaults the result of
-        `~xotl.crdt.clocks.monotonic`:func:.
 
         The value is only updated if `timestamp` is greater than the last
         recorded timestamp; or the timestamp is the same but the process is
@@ -82,8 +79,6 @@ class Register:
         Return True if the value was updated.
 
         """
-        if timestamp is None:
-            timestamp = monotonic()
         if timestamp > self.timestamp:
             self.value = value
             self.timestamp = timestamp

@@ -140,7 +140,7 @@ class USet(CvRDT):
             self.items |= other.items
             self.vclock += other.vclock
         else:
-            assert False
+            assert False  # pragma: no cover
 
     def add(self, item) -> None:
         """Add `item` to the set."""
@@ -206,7 +206,7 @@ class ORSet(CvRDT):
     def dot_counter(self) -> int:
         try:
             return self.dot.counter
-        except ValueError:
+        except ValueError:  # pragma: no cover
             return 0
 
     def add(self, item):

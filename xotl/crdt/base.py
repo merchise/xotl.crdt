@@ -72,10 +72,8 @@ class CvRDT:
         raise NotImplementedError
 
     def reset(self) -> None:
-        """Reset the internal state of value, usually to the initial state.
-
-        """
-        self.init()
+        "Reset the internal state of value, usually to the initial state."
+        raise NotImplementedError
 
     def __le__(self, other):
         """Compares two replicas for '<=' in the semilattice.
@@ -116,6 +114,6 @@ def from_state(state: bytes) -> CvRDT:
 
     res = pickle.loads(state)
     if not isinstance(res, CvRDT):
-        raise ValueError("Invalid state")
+        raise ValueError("Invalid state")  # pragma: no cover
     else:
         return res
