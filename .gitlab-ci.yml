@@ -9,9 +9,8 @@ stages:
   - publish
 
 check code smells:
-  image: python:3.6-alpine
+  image: registry.merchise.org/merchise/python-dev:3.6-alpine
   script:
-    - pip install merchise.lint==0.11
     - merchise_lint3
   stage: pre-check
   allow_failure: true
@@ -20,26 +19,21 @@ check code smells:
     - merge_requests
 
 .run_tox_tests: &run_tox_tests
-  image: python:$PYTHON-alpine
+  image: registry.merchise.org/merchise/python-dev:$PYTHON-alpine
   stage: test
   script:
-    - pip install tox
     - tox -e system-unit
 
 .run_tox_staticcheck: &run_tox_staticcheck
-  image: python:3.6-alpine
+  image: registry.merchise.org/merchise/python-dev:3.6-alpine
   stage: pre-check
   script:
-    - apk add g++
-    - pip install tox
     - tox -e 3.6-staticcheck
 
 .run_tox_doctest: &run_tox_doctest
-  image: python:3.6-alpine
+  image: registry.merchise.org/merchise/python-dev:3.6-alpine
   stage: test
   script:
-    - apk add make
-    - pip install tox
     - tox -e 3.6-doctest
 
 run tests with Python 3.6:
@@ -58,6 +52,16 @@ run tests with Python 3.7:
     - master
     - merge_requests
 
+run tests with Python 3.8:
+  <<: *run_tox_tests
+  variables:
+    PYTHON: "3.7"
+  only:
+    - master
+    - merge_requests
+  allow_failure: true
+
+
 run static checks:
   <<: *run_tox_staticcheck
   only:
@@ -72,10 +76,9 @@ run doctests:
 
 
 run coverage tests:
-  image: python:3.6-alpine
+  image: registry.merchise.org/merchise/python-dev:3.6-alpine
   stage: test
   script:
-    - pip install tox
     - tox -e 3.6-coverage
   allow_failure: true
   only:
@@ -136,10 +139,9 @@ publish_locally:
 
 
 publish_pypi:
-  image: python:3.6-alpine
+  image: registry.merchise.org/merchise/python-dev:3.6-alpine
   stage: publish
   script:
-    - pip install twine
     - twine upload -u "$PYPI_USERNAME" -p "$PYPI_PASSWORD" dist/*
   only:
     - tags
@@ -153,11 +155,9 @@ publish_pypi:
 
 
 build documentation:
-  image: python:3.6-alpine
+  image: registry.merchise.org/merchise/python-dev:3.6-alpine
   stage: build doc
   script:
-    - apk add g++ make
-    - pip install pipenv
     - pipenv install --dev
     - source `pipenv --venv`/bin/activate
     - make -C docs/ html
