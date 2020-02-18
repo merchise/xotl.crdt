@@ -23,9 +23,7 @@ processes = strategies.sampled_from(_PROCESSES)
 @strategies.composite
 def clocks(draw):
     procs = draw(strategies.sets(processes, max_size=len(_PROCESSES)))
-    dots = [
-        Dot(proc, draw(strategies.integers(min_value=0))) for proc in procs
-    ]
+    dots = [Dot(proc, draw(strategies.integers(min_value=0))) for proc in procs]
     return VClock(dots)
 
 
@@ -38,23 +36,25 @@ def test_equality_implies_hash(c1, c2):
 
 
 def test_descend_regression1():
-    v1 = VClock(dots=(Dot(process=R0, counter=1),
-                      Dot(process=R1, counter=1)))
+    v1 = VClock(dots=(Dot(process=R0, counter=1), Dot(process=R1, counter=1)))
     v2 = VClock(dots=(Dot(process=R0, counter=1),))
     assert v1 >= v2
 
 
 def test_descend_regression2():
-    v1 = VClock(dots=(Dot(process=R0, counter=1),
-                      Dot(process=R1, counter=1)))
+    v1 = VClock(dots=(Dot(process=R0, counter=1), Dot(process=R1, counter=1)))
     v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 >= v2
 
 
 def test_descend_regression3():
-    v1 = VClock(dots=(Dot(process=R0, counter=1),
-                      Dot(process=R1, counter=1),
-                      Dot(process=R2, counter=0)))
+    v1 = VClock(
+        dots=(
+            Dot(process=R0, counter=1),
+            Dot(process=R1, counter=1),
+            Dot(process=R2, counter=0),
+        )
+    )
     v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 >= v2
 

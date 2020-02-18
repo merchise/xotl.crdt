@@ -6,12 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from xotl.crdt.testing.sets import (
-    GSetMachine,
-    TPSetMachine,
-    USetMachine,
-    ORSetMachine,
-)
+from xotl.crdt.testing.sets import GSetMachine, TPSetMachine, USetMachine, ORSetMachine
 
 
 TestGSet = GSetMachine.TestCase
