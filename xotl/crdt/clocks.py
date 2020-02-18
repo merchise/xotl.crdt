@@ -128,10 +128,8 @@ class VClock:
             key=get_process,
         )
         dots = [
-            Dot(process, max(d.counter for d in lgroup))
+            Dot(process, max(d.counter for d in group))
             for process, group in groups
-            # convert group to a list so that we can do the double max above
-            for lgroup in (list(group),)
         ]
         # Silly little trick to avoid sorting what is sorted already
         result = VClock()
