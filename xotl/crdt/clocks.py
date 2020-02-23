@@ -86,6 +86,10 @@ class VClock:
         else:
             return NotImplemented
 
+    def __hash__(self):
+        # NB: self.dots is ordered by process, so we get a consistent hash.
+        return hash(tuple(d for d in self.dots if d.counter))
+
     def __floordiv__(self, other: "VClock") -> bool:
         """True if neither self descends from other nor other from self.
 
@@ -128,7 +132,8 @@ class VClock:
             key=get_process,
         )
         dots = [
-            Dot(process, max(d.counter for d in group)) for process, group in groups
+            Dot(process, max(d.counter for d in group))
+            for process, group in groups
         ]
         # Silly little trick to avoid sorting what is sorted already
         result = VClock()
