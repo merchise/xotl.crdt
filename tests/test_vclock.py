@@ -6,33 +6,55 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+from hypothesis import strategies, given
+
 from xotl.crdt.base import Process
 from xotl.crdt.clocks import VClock, Dot
 
 
-R0 = Process('R0', 0)
-R1 = Process('R1', 1)
-R2 = Process('R2', 2)
+R0 = Process("R0", 0)
+R1 = Process("R1", 1)
+R2 = Process("R2", 2)
+
+_PROCESSES = [Process("P-%02d" % i, i) for i in range(100)]
+processes = strategies.sampled_from(_PROCESSES)
+
+
+@strategies.composite
+def clocks(draw):
+    procs = draw(strategies.sets(processes, max_size=len(_PROCESSES)))
+    dots = [Dot(proc, draw(strategies.integers(min_value=0))) for proc in procs]
+    return VClock(dots)
+
+
+@given(clocks(), clocks())
+def test_equality_implies_hash(c1, c2):
+    if c1 == c2:
+        assert hash(c1) == hash(
+            c2
+        ), f"{c1} == {c2}, but their hashes differ: {hash(c1)} != {hash(c2)}"
 
 
 def test_descend_regression1():
-    v1 = VClock(dots=(Dot(process=R0, counter=1),
-                      Dot(process=R1, counter=1)))
+    v1 = VClock(dots=(Dot(process=R0, counter=1), Dot(process=R1, counter=1)))
     v2 = VClock(dots=(Dot(process=R0, counter=1),))
     assert v1 >= v2
 
 
 def test_descend_regression2():
-    v1 = VClock(dots=(Dot(process=R0, counter=1),
-                      Dot(process=R1, counter=1)))
+    v1 = VClock(dots=(Dot(process=R0, counter=1), Dot(process=R1, counter=1)))
     v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 >= v2
 
 
 def test_descend_regression3():
-    v1 = VClock(dots=(Dot(process=R0, counter=1),
-                      Dot(process=R1, counter=1),
-                      Dot(process=R2, counter=0)))
+    v1 = VClock(
+        dots=(
+            Dot(process=R0, counter=1),
+            Dot(process=R1, counter=1),
+            Dot(process=R2, counter=0),
+        )
+    )
     v2 = VClock(dots=(Dot(process=R1, counter=1),))
     assert v1 >= v2
 

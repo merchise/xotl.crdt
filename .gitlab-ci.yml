@@ -55,7 +55,7 @@ run tests with Python 3.7:
 run tests with Python 3.8:
   <<: *run_tox_tests
   variables:
-    PYTHON: "3.7"
+    PYTHON: "3.8"
   only:
     - master
     - merge_requests
