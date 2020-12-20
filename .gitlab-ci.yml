@@ -28,7 +28,7 @@ check code smells:
     - tox -e system-unit
 
 .run_tox_staticcheck: &run_tox_staticcheck
-  image: python:3.8-alpine
+  image: python:3.8
   stage: pre-check
   script:
     - pip install tox
