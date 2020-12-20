@@ -24,18 +24,21 @@ check code smells:
   image: python:$PYTHON-alpine
   stage: test
   script:
+    - pip install tox
     - tox -e system-unit
 
 .run_tox_staticcheck: &run_tox_staticcheck
   image: python:3.8-alpine
   stage: pre-check
   script:
+    - pip install tox
     - tox -e 3.8-staticcheck
 
 .run_tox_doctest: &run_tox_doctest
   image: python:3.8-alpine
   stage: test
   script:
+    - pip install tox
     - tox -e 3.8-doctest
 
 run tests with Python 3.6:
@@ -90,6 +93,7 @@ run coverage tests:
   image: python:3.8-alpine
   stage: test
   script:
+    - pip install tox
     - tox -e 3.8-coverage
   allow_failure: true
   only:
