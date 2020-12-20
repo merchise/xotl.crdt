@@ -9,9 +9,11 @@ stages:
   - publish
 
 check code smells:
-  image: registry.merchise.org/merchise/python-dev:3.6-alpine
+  image: python:3.6-alpine
   script:
-    - merchise_lint3
+    - |
+      pip install "flake8~=3.7.9" "flake8-bugbear~=19.8.0"
+      flake8 xotl/crdt/ tests/
   stage: pre-check
   allow_failure: true
   only:
@@ -19,22 +21,22 @@ check code smells:
     - merge_requests
 
 .run_tox_tests: &run_tox_tests
-  image: registry.merchise.org/merchise/python-dev:$PYTHON-alpine
+  image: python:$PYTHON-alpine
   stage: test
   script:
     - tox -e system-unit
 
 .run_tox_staticcheck: &run_tox_staticcheck
-  image: registry.merchise.org/merchise/python-dev:3.6-alpine
+  image: python:3.8-alpine
   stage: pre-check
   script:
-    - tox -e 3.6-staticcheck
+    - tox -e 3.8-staticcheck
 
 .run_tox_doctest: &run_tox_doctest
-  image: registry.merchise.org/merchise/python-dev:3.6-alpine
+  image: python:3.8-alpine
   stage: test
   script:
-    - tox -e 3.6-doctest
+    - tox -e 3.8-doctest
 
 run tests with Python 3.6:
   <<: *run_tox_tests
@@ -59,7 +61,16 @@ run tests with Python 3.8:
   only:
     - main
     - merge_requests
-  allow_failure: true
+  allow_failure: false
+
+run tests with Python 3.9:
+  <<: *run_tox_tests
+  variables:
+    PYTHON: "3.9"
+  only:
+    - main
+    - merge_requests
+  allow_failure: false
 
 
 run static checks:
@@ -76,10 +87,10 @@ run doctests:
 
 
 run coverage tests:
-  image: registry.merchise.org/merchise/python-dev:3.6-alpine
+  image: python:3.8-alpine
   stage: test
   script:
-    - tox -e 3.6-coverage
+    - tox -e 3.8-coverage
   allow_failure: true
   only:
     - main
@@ -91,10 +102,13 @@ check signature of tag:
   stage: check
   script:
     - apk add git gnupg
-    - gpg --recv-key $GNUPG_KEY
+    - cat $GNUPG_KEY_FILE | gpg --import
     - git verify-tag $CI_COMMIT_REF_NAME
   only:
-    - tags
+    refs:
+      - tags
+    variables:
+      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+|\.dev\d+)?$/
 
 build source distribution:
   image: python:3.6-alpine
@@ -106,7 +120,10 @@ build source distribution:
     paths:
       - dist/
   only:
-    - tags
+    refs:
+      - tags
+    variables:
+      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+|\.dev\d+)?$/
 
 build binary distribution:
   image: python:3.6-alpine
@@ -118,33 +135,23 @@ build binary distribution:
     paths:
       - dist/
   only:
-    - tags
-
-publish_locally:
-  stage: publish
-  script:
-    - ssh manu@gestion.lahavane.com "mkdir -p Repos/$CI_PROJECT_NAME"
-    - scp dist/* manu@gestion.lahavane.com:Repos/$CI_PROJECT_NAME/
-  tags:
-    - repo.lahavane.com
-  only:
-    - tags
-  environment:
-    name: repo.lahavane.com
-    url: http://repo.lahavane.com/pypi/$CI_PROJECT_NAME
-  dependencies:
-    - check signature of tag
-    - build source distribution
-    - build binary distribution
+    refs:
+      - tags
+    variables:
+      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+|\.dev\d+)?$/
 
 
 publish_pypi:
-  image: registry.merchise.org/merchise/python-dev:3.6-alpine
+  image: python:3.8-alpine
   stage: publish
   script:
+    - pip install twine
     - twine upload -u "$PYPI_USERNAME" -p "$PYPI_PASSWORD" dist/*
   only:
-    - tags
+    refs:
+      - tags
+    variables:
+      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+)?$/
   dependencies:
     - check signature of tag
     - build source distribution
@@ -159,7 +166,7 @@ publish_pypi:
   script:
     - |
       apk add make git
-      pip install -U pip pipenv
+      pip install -U sphinx sphinx-rtd-theme
       pip install -e .
       make -C docs/ html
       mkdir -p public
