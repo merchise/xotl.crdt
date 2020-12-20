@@ -19,8 +19,8 @@ Main reference:
 
    -- Available at https://hal.inria.fr/inria-00555588v1
 
-This package requires Python 3.6+, and has been tested in CPython 3.6 and
-CPython 3.7.
+This package requires Python 3.6+, and has been tested in CPython 3.6, 3.7,
+3.8 and 3.9.
 
 
 .. toctree::

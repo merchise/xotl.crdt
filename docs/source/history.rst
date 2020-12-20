@@ -8,7 +8,7 @@ Series 0.x
 Unreleased.  Release 0.3.0
 --------------------------
 
-Nothing yet.
+- Test in Python 3.8 and 3.9.
 
 
 2018-10-16.  Release 0.2.0
