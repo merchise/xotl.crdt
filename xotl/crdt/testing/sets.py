@@ -48,9 +48,7 @@ class Set:
 
 
 class GSetMachine(ModelBasedCRDTMachine):
-    """The stateful machinery to test the `~xotl.crdt.sets.GSet`:class:.
-
-    """
+    """The stateful machinery to test the `~xotl.crdt.sets.GSet`:class:."""
 
     def __init__(self):
         super().__init__()
@@ -73,9 +71,7 @@ class GSetMachine(ModelBasedCRDTMachine):
 
 
 class TPSetMachine(SyncBasedCRDTMachine):
-    """The stateful machinery to test the `~xotl.crdt.sets.TwoPhaseSet`:class:.
-
-    """
+    """The stateful machinery to test the `~xotl.crdt.sets.TwoPhaseSet`:class:."""
 
     def __init__(self):
         super().__init__()
@@ -140,9 +136,7 @@ class SyncBasedSetMachine(SyncBasedCRDTMachine):
 
 
 class USetMachine(SyncBasedSetMachine):
-    """Test machinery for `~xotl.crdt.sets.USet`:class:.
-
-    """
+    """Test machinery for `~xotl.crdt.sets.USet`:class:."""
 
     def __init__(self):
         super().__init__()
@@ -172,13 +166,13 @@ class USetMachine(SyncBasedSetMachine):
 
         This method `consumes <hypothesis.stateful.consumes>`:func: the item
         generated in the bundle ``added_items`` and places the same item into
-        the bundle ``added_items``; `remove_item`:method: below takes items
-        from the bundle ``added_items``.  This only ensures the item was
-        previously added but we don't know to which replica.  Furthermore, we
-        don't know if the replicas were reset after adding items.  So this
-        strategy doesn't remove the possibility of trying to remove an item
-        which is not in the replica; and that's OK.  At the same time we
-        reduce the chance of generating invalid examples.
+        the bundle ``added_items``; `remove_item`:meth: below takes items from
+        the bundle ``added_items``.  This only ensures the item was previously
+        added but we don't know to which replica.  Furthermore, we don't know
+        if the replicas were reset after adding items.  So this strategy
+        doesn't remove the possibility of trying to remove an item which is
+        not in the replica; and that's OK.  At the same time we reduce the
+        chance of generating invalid examples.
 
         """
         assume(not item.already_added)
@@ -225,9 +219,7 @@ class ORSetMachine(SyncBasedSetMachine):
         item=SyncBasedSetMachine.items,
     )
     def simulate_concurrent_add_remove(self, replica1, replica2, item):
-        """Simulates add of item in `replica1` concurrent with removal in `replica2`.
-
-        """
+        """Simulates add of item in `replica1` concurrent with removal in `replica2`."""
         assume(replica1 is not replica2)
         self.run_synchronize()
         replica1.add(item)
