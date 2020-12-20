@@ -38,6 +38,7 @@ check code smells:
   image: python:3.8-alpine
   stage: test
   script:
+    - apk add make git
     - pip install tox
     - tox -e 3.8-doctest
 
