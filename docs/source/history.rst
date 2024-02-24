@@ -8,7 +8,7 @@ Series 0.x
 Unreleased.  Release 0.3.0
 --------------------------
 
-- Test in Python 3.8 and 3.9.
+- Support Python 3.10+.  Drop support for Python 3.6, 3.7, 3.8, and 3.9.
 
 
 2018-10-16.  Release 0.2.0

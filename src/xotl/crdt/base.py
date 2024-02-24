@@ -7,6 +7,7 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 """Base interfaces."""
+
 from dataclasses import dataclass
 
 
@@ -53,9 +54,7 @@ class CvRDT:
         """Set the initial state of a newly create CRDT."""
 
     def merge(self, other: "CvRDT") -> None:
-        """Update the CvRDT to account for the another replica's state.
-
-        """
+        """Update the CvRDT to account for the another replica's state."""
         raise NotImplementedError
 
     @property
@@ -93,9 +92,7 @@ class CvRDT:
 
 
 def get_state(crdt: CvRDT) -> bytes:
-    """Dumps the crdt in a way that is amenable for transmission/storage.
-
-    """
+    """Dumps the crdt in a way that is amenable for transmission/storage."""
     import pickle
 
     return pickle.dumps(crdt)

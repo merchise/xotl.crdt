@@ -6,10 +6,10 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
+from hypothesis.stateful import rule
+
 from xotl.crdt.counter import GCounter, PNCounter
 from xotl.crdt.testing.base import ModelBasedCRDTMachine
-
-from hypothesis.stateful import rule
 
 
 class ModelCounter:

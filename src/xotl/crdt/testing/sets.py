@@ -6,17 +6,16 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from typing import Any
 from dataclasses import dataclass, field
+from typing import Any
 
-from xoutil.symbols import Unset
+from hypothesis import assume
+from hypothesis import strategies as st
+from hypothesis.stateful import Bundle, consumes, rule
+from xotl.tools.symbols import Unset
 
-from xotl.crdt.sets import GSet, TwoPhaseSet, USet, ORSet
+from xotl.crdt.sets import GSet, ORSet, TwoPhaseSet, USet
 from xotl.crdt.testing.base import ModelBasedCRDTMachine, SyncBasedCRDTMachine
-
-from hypothesis import strategies as st, assume
-from hypothesis.stateful import rule, Bundle, consumes
-
 
 atoms = (
     st.integers()
@@ -200,7 +199,8 @@ class ORSetMachine(SyncBasedSetMachine):
         print("************ New ORSet case *************")
 
     @rule(
-        replica=SyncBasedCRDTMachine.replicas, item=consumes(SyncBasedSetMachine.items)
+        replica=SyncBasedCRDTMachine.replicas,
+        item=consumes(SyncBasedSetMachine.items),
     )
     def add_item(self, replica, item):
         assume(not item.already_added)

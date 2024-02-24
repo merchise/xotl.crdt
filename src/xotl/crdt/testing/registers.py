@@ -6,17 +6,16 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from typing import Any
 from dataclasses import dataclass, field
-
-from xotl.crdt.base import Process
-from xotl.crdt.register import LWWRegister
-from xotl.crdt.testing.base import ModelBasedCRDTMachine, SyncBasedCRDTMachine
 from time import monotonic
+from typing import Any
 
 from hypothesis import strategies as st
 from hypothesis.stateful import rule
 
+from xotl.crdt.base import Process
+from xotl.crdt.register import LWWRegister
+from xotl.crdt.testing.base import ModelBasedCRDTMachine, SyncBasedCRDTMachine
 
 atoms = (
     st.integers()
@@ -120,9 +119,7 @@ class LWWRegisterMachine(ModelBasedCRDTMachine):
 
 
 class LWWRegisterConcurrentMachine(SyncBasedCRDTMachine):
-    """A concurrent LWWRegister stateful test machine.
-
-    """
+    """A concurrent LWWRegister stateful test machine."""
 
     def __init__(self):
         super().__init__()

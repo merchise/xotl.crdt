@@ -7,8 +7,9 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from time import monotonic
+
 from xotl.crdt.base import CvRDT
-from xotl.crdt.clocks import VClock, Dot
+from xotl.crdt.clocks import Dot, VClock
 
 
 class LWWRegister(CvRDT):

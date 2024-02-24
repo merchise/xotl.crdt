@@ -1,153 +1,118 @@
 ---
+variables:
+  PYTHON_VERSION: "3.12"
+
 stages:
-  - pre-check
-  - build doc
-  - publish doc
   - test
-  - check
   - build
   - publish
+  - clean up
 
-check code smells:
-  image: python:3.6-alpine
+lint:
+  image: python:$PYTHON_VERSION
   script:
-    - |
-      pip install "flake8~=3.7.9" "flake8-bugbear~=19.8.0"
-      flake8 xotl/crdt/ tests/
-  stage: pre-check
+    - pip install -r requirements-dev.lock
+    - ruff check src/
+    - ruff format --check src/
+    - isort --check --diff src/
+  stage: test
   allow_failure: true
   only:
-    - main
-    - merge_requests
+    refs:
+      - main
+      - merge_requests
+    changes:
+      - pyproject.toml
+      - src/**/*.py
 
 .run_tox_tests: &run_tox_tests
-  image: python:$PYTHON-alpine
+  image: python:$PYTHON
   stage: test
   script:
     - pip install tox
     - tox -e system-unit
 
-.run_tox_staticcheck: &run_tox_staticcheck
-  image: python:3.8
-  stage: pre-check
-  script:
-    - pip install tox
-    - tox -e 3.8-staticcheck
+tests:
+  <<: *run_tox_tests
+  parallel:
+    matrix:
+      - PYTHON: ["3.11", "3.12", "3.10"]
+  only:
+    refs:
+      - main
+      - merge_request
+    changes:
+      - pyproject.toml
+      - src/**/*.py
 
-.run_tox_doctest: &run_tox_doctest
-  image: python:3.8-alpine
+
+.run_tox_staticcheck: &run_tox_staticcheck
+  image: python:$PYTHON_VERSION
   stage: test
   script:
-    - apk add make git
     - pip install tox
-    - tox -e 3.8-doctest
-
-run tests with Python 3.6:
-  <<: *run_tox_tests
-  variables:
-    PYTHON: "3.6"
-  only:
-    - main
-    - merge_requests
-
-run tests with Python 3.7:
-  <<: *run_tox_tests
-  variables:
-    PYTHON: "3.7"
-  only:
-    - main
-    - merge_requests
-
-run tests with Python 3.8:
-  <<: *run_tox_tests
-  variables:
-    PYTHON: "3.8"
-  only:
-    - main
-    - merge_requests
-  allow_failure: false
-
-run tests with Python 3.9:
-  <<: *run_tox_tests
-  variables:
-    PYTHON: "3.9"
-  only:
-    - main
-    - merge_requests
-  allow_failure: false
-
+    - tox -e system-staticcheck
 
 run static checks:
   <<: *run_tox_staticcheck
   only:
-    - main
-    - merge_requests
+    refs:
+      - main
+      - merge_request
+    changes:
+      - pyproject.toml
+      - src/**/*.py
+
+.run_tox_doctest: &run_tox_doctest
+  image: python:$PYTHON_VERSION
+  stage: test
+  script:
+    - pip install tox
+    - tox -e system-doctest
 
 run doctests:
   <<: *run_tox_doctest
   only:
-    - main
-    - merge_requests
-
+    refs:
+      - main
+      - merge_request
+    changes:
+      - pyproject.toml
+      - src/**/*.py
+      - docs/**/*.rst
 
 run coverage tests:
-  image: python:3.8-alpine
+  image: python:$PYTHON_VERSION
   stage: test
   script:
     - pip install tox
-    - tox -e 3.8-coverage
+    - tox -e system-coverage
   allow_failure: true
   only:
-    - main
-    - merge_requests
-
-
-check signature of tag:
-  image: alpine
-  stage: check
-  script:
-    - apk add git gnupg
-    - cat $GNUPG_KEY_FILE | gpg --import
-    - git verify-tag $CI_COMMIT_REF_NAME
-  only:
     refs:
-      - tags
-    variables:
-      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+|\.dev\d+)?$/
+      - main
+      - merge_request
+    changes:
+      - pyproject.toml
+      - src/**/*.py
 
-build source distribution:
-  image: python:3.6-alpine
+build distribution:
+  image: python:$PYTHON_VERSION
   stage: build
   script:
-    - rm -f dist/*
-    - python setup.py sdist
+    - apt-get update; apt-get install -y --no-install-recommends git make
+    - pip install hatch
+    - hatch build
   artifacts:
     paths:
       - dist/
   only:
     refs:
-      - tags
-    variables:
-      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+|\.dev\d+)?$/
-
-build binary distribution:
-  image: python:3.6-alpine
-  stage: build
-  script:
-    - pip install wheel
-    - python setup.py bdist_wheel
-  artifacts:
-    paths:
-      - dist/
-  only:
-    refs:
-      - tags
-    variables:
-      - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+|\.dev\d+)?$/
-
+      - main
+      - merge_request
 
 publish_pypi:
-  image: python:3.8
+  image: python:$PYTHON_VERSION
   stage: publish
   script:
     - pip install twine
@@ -158,31 +123,86 @@ publish_pypi:
     variables:
       - $CI_COMMIT_TAG =~ /^\d+(\.\d+)*(|a\d+|b\d+|rc\d+)?(\.post\d+)?$/
   dependencies:
-    - check signature of tag
-    - build source distribution
-    - build binary distribution
+    - build distribution
   environment:
     name: pypi
     url: https://pypi.python.org/pypi/$CI_PROJECT_NAME
 
 
-.build_doc: &build_documentation
-  image: python:3.8-alpine
+.build_doc: &build-documentation
+  image: python:$PYTHON_VERSION
   script:
-    - |
-      apk add make git
-      pip install -U sphinx sphinx-rtd-theme
-      pip install -e .
-      make -C docs/ html
-      mkdir -p public
-      cp -rf docs/build/html/* public/
+    - apt-get update; apt-get install -y --no-install-recommends git make
+    - pip install -r requirements-dev.lock
+    - make -C docs html
+    - mkdir -p public
+    - cp -r docs/build/html/* public/
+
+build documentation:
+  <<: *build-documentation
+  stage: build
+  interruptible: true
+  needs:
+    - run doctests
+  only: &when-build-documentation-only
+    refs:
+      - main
+      - merge_requests
+    changes:
+      - tox.ini
+      - docs/source/conf.py
+      - docs/**/*.rst
+      - src/**/*.py
+    variables:
+      - $CI_SERVER_HOST == "gitlab.merchise.org"
 
 pages:
-  <<: *build_documentation
+  <<: *build-documentation
   stage: build
   needs: []
   artifacts:
     paths:
       - public
   only:
-    - main
+    refs:
+      - main
+    variables:
+      - $CI_SERVER_HOST == "gitlab.com"
+
+publish in our rtd:
+  interruptible: true
+  variables:
+    GIT_STRATEGY: none
+  stage: publish
+  needs:
+    - build documentation
+  image: alpine
+  script:
+    - |
+      apk add openssh rsync
+      mkdir -p $HOME/.ssh
+      chmod 700 $HOME/.ssh
+      cp $RSA_KEY_FILE $HOME/.ssh/id_rsa
+      chmod 600 $HOME/.ssh/id_rsa
+      cp $SSH_CONFIG_FILE $HOME/.ssh/config
+      ssh docs.lahavane.com mkdir -p /data/$CI_PROJECT_NAME/.$CI_COMMIT_SHA
+      rsync -auvp -e ssh docs/build/html/ docs.lahavane.com:/data/$CI_PROJECT_NAME/.$CI_COMMIT_SHA/
+      ssh docs.lahavane.com "cd /data/$CI_PROJECT_NAME; rm -r $CI_COMMIT_REF_NAME; ln -s .$CI_COMMIT_SHA $CI_COMMIT_REF_NAME"
+      ssh docs.lahavane.com "cd /data/$CI_PROJECT_NAME; ls -al | grep -oE '\.([0-9]|[a-z])*$' | sort | uniq -c | grep '1 ' | grep -oE '\.([0-9]|[a-z])*$' | xargs rm -rf"
+  environment:
+    name: docs.lahavane.com
+    url: http://docs.lahavane.com/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME
+  only:
+    <<: *when-build-documentation-only
+
+
+clean-up RTD:
+  stage: clean up
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_SERVER_HOST == "gitlab.merchise.org"'
+      when: on_success
+    - when: never
+  trigger:
+    include: ci/cleanup.yml

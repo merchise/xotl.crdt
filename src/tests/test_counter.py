@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ---------------------------------------------------------------------
 # Copyright (c) Merchise Autrement [~º/~] and Contributors
@@ -6,5 +6,7 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from setuptools import setup
-setup()
+from xotl.crdt.testing.counters import GCounterMachine, PNCounterMachine
+
+TestGCounter = GCounterMachine.TestCase
+TestPNCounter = PNCounterMachine.TestCase

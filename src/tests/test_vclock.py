@@ -6,11 +6,10 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from hypothesis import strategies, given
+from hypothesis import given, strategies
 
 from xotl.crdt.base import Process
-from xotl.crdt.clocks import VClock, Dot
-
+from xotl.crdt.clocks import Dot, VClock
 
 R0 = Process("R0", 0)
 R1 = Process("R1", 1)

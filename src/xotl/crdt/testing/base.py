@@ -7,14 +7,14 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from copy import deepcopy
+from itertools import product
 from random import shuffle
-from xoutil.future.itertools import continuously_slides as slide, product
-
-from xotl.crdt.base import from_state, get_state, Process
 
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from xotl.tools.future.itertools import continuously_slides as slide
 
+from xotl.crdt.base import Process, from_state, get_state
 
 REPLICA_NODES = list(range(5))
 

@@ -6,15 +6,14 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from typing import Iterable, Any
+from typing import Any, Iterable
+
 from xotl.crdt.base import CvRDT
-from xotl.crdt.clocks import VClock, Dot
+from xotl.crdt.clocks import Dot, VClock
 
 
 class GSet(CvRDT):
-    """The Grow-only set.
-
-    """
+    """The Grow-only set."""
 
     def init(self):
         self.items = set()
@@ -167,9 +166,7 @@ class USet(CvRDT):
 
 
 class ORSet(CvRDT):
-    """The Observed-Remove Set.
-
-    """
+    """The Observed-Remove Set."""
 
     def init(self):
         self.items: USet = USet(process=self.process)
@@ -210,9 +207,7 @@ class ORSet(CvRDT):
             return 0
 
     def add(self, item):
-        """Add `item` to the set.
-
-        """
+        """Add `item` to the set."""
         # USet requires unique items, we expect the processes names are unique
         # in the cluster and each have an ever increasing tick.
         self.ticks += 1
@@ -241,9 +236,7 @@ class ORSet(CvRDT):
         return f"<ORSet: {self.value}; {self.process}, {self.items}>"
 
     def reset(self, items: Iterable[Any] = None):
-        """Reset the value of the set with `items`.
-
-        """
+        """Reset the value of the set with `items`."""
         self.init()
         for item in items or []:
             self.add(item)

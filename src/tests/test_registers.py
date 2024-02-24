@@ -6,9 +6,10 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from xotl.crdt.testing.counters import GCounterMachine
-from xotl.crdt.testing.counters import PNCounterMachine
+from xotl.crdt.testing.registers import (
+    LWWRegisterConcurrentMachine,
+    LWWRegisterMachine,
+)
 
-
-TestGCounter = GCounterMachine.TestCase
-TestPNCounter = PNCounterMachine.TestCase
+TestLWWRegister = LWWRegisterMachine.TestCase
+TestLWWRegisterConcurrent = LWWRegisterConcurrentMachine.TestCase

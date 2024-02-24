@@ -6,24 +6,20 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-"""Implements the Vector Clocks.
-
-"""
-from typing import Tuple, Sequence
+"""Implements the Vector Clocks."""
 
 from collections import deque
 from dataclasses import dataclass
 from itertools import groupby
 from operator import attrgetter
+from typing import Sequence, Tuple
 
 from xotl.crdt.base import Process
 
 
 @dataclass(frozen=True, order=False, eq=True)
 class Dot:
-    """A component on the vector clock.
-
-    """
+    """A component on the vector clock."""
 
     # process names should be unique across all processes
     process: Process
@@ -36,9 +32,9 @@ class VClock:
 
     def __init__(self, dots: Sequence[Dot] = None) -> None:
         if dots:
-            assert len([d.process for d in dots]) == len(
-                {d.process for d in dots}
-            ), f"Repeated processes in {dots!r}"
+            assert len([d.process for d in dots]) == len({
+                d.process for d in dots
+            }), f"Repeated processes in {dots!r}"
         # Avoid silly counters.
         dots = [d for d in (dots or []) if d.counter >= 0]
         dots.sort(key=attrgetter("process"))
@@ -132,8 +128,7 @@ class VClock:
             key=get_process,
         )
         dots = [
-            Dot(process, max(d.counter for d in group))
-            for process, group in groups
+            Dot(process, max(d.counter for d in group)) for process, group in groups
         ]
         # Silly little trick to avoid sorting what is sorted already
         result = VClock()
