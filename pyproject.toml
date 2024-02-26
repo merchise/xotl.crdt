@@ -85,6 +85,7 @@ exclude = ["src/xotl/crdt/_version.py"]
 
 [tool.coverage.run]
 branch = false
+omit = ["src/xotl/crdt/_version.py"]
 
 [tool.coverage.report]
 exclude_lines = [
