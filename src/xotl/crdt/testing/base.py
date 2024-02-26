@@ -7,14 +7,14 @@
 # This is free software; you can do what the LICENCE file allows you to.
 #
 from copy import deepcopy
+from itertools import product
 from random import shuffle
-from xoutil.future.itertools import continuously_slides as slide, product
-
-from xotl.crdt.base import from_state, get_state, Process
 
 from hypothesis import strategies as st
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from xotl.tools.future.itertools import continuously_slides as slide
 
+from xotl.crdt.base import Process, from_state, get_state
 
 REPLICA_NODES = list(range(5))
 
@@ -30,12 +30,12 @@ class BaseCRDTMachine(RuleBasedStateMachine):
 
     """
 
-    replicas = Bundle("replicas")
+    replicas = Bundle("replicas")  # type: ignore
     process_names = st.sampled_from(REPLICA_NODES)
 
     @rule(target=replicas, name=process_names)
     def replica(self, name):
-        return self.subjects[name]
+        return self.subjects[name]  # type: ignore
 
     @rule(crdt=replicas)
     def from_state_get_state(self, crdt):
@@ -72,8 +72,8 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
     @rule()
     def reset_all_replicas(self):
         print("Reseting the replicas (and model)")
-        self.model.reset()
-        for replica in self.subjects:
+        self.model.reset()  # type: ignore
+        for replica in self.subjects:  # type: ignore
             replica.reset()
 
     @rule(receiver=BaseCRDTMachine.replicas)
@@ -85,7 +85,7 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
         and compares the resulting state with expected state.
 
         """
-        senders = [which for which in self.subjects if receiver is not which]
+        senders = [which for which in self.subjects if receiver is not which]  # type: ignore
         shuffle(senders)
         before_merge = []
         for sender in senders:
@@ -93,7 +93,7 @@ class ModelBasedCRDTMachine(BaseCRDTMachine):
             before_merge.append(deepcopy(receiver))
             receiver.merge(from_state(state))
             assert sender <= receiver
-        model = self.model
+        model = self.model  # type: ignore
         assert receiver.value == model.value, f"{receiver.value} != {model.value}"
 
 
@@ -109,7 +109,7 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
     @rule()
     def reset_all_replicas(self):
         print("Resetting the replicas (synchronized based)")
-        for replica in self.subjects:
+        for replica in self.subjects:  # type: ignore
             replica.reset()
 
     @rule()
@@ -132,17 +132,17 @@ class SyncBasedCRDTMachine(BaseCRDTMachine):
         must have reached the same conclusion.
 
         """
-        replicas = [which for which in self.subjects]
+        replicas = [which for which in self.subjects]  # type: ignore
         shuffle(replicas)
         before = deepcopy(replicas)  # noqa
         for sender, receiver in slide(replicas):
-            state = get_state(sender)
-            receiver.merge(from_state(state))
-            assert sender <= receiver
+            state = get_state(sender)  # type: ignore
+            receiver.merge(from_state(state))  # type: ignore
+            assert sender <= receiver  # type: ignore
         for sender, receiver in slide(reversed(replicas)):
-            state = get_state(sender)
-            receiver.merge(from_state(state))
-            assert sender <= receiver
+            state = get_state(sender)  # type: ignore
+            receiver.merge(from_state(state))  # type: ignore
+            assert sender <= receiver  # type: ignore
         first = replicas[0]
         assert all(r.value == s.value for r, s in product(replicas, replicas))
         print(f"Agreement reached: {first.value}")

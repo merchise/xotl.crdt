@@ -1,0 +1,122 @@
+[project]
+name = "xotl.crdt"
+description = "CRDTs for Python (a playground)"
+authors = [
+   { name = "Merchise Autrement", email="info@merchise.de" }
+]
+license="MIT"
+readme="README.rst"
+requires-python = ">= 3.10"
+homepage="https://gitlab.merchise.org/merchise/xotl.crdt"
+documentation="https://merchise-autrement.gitlab.io/xotl.crdt"
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "xotl.tools>=2.2.5,<4.0; python_version <= '3.11'",
+    "xotl.tools>=3.0.0a5,<4.0; python_version > '3.11'",
+]
+dynamic = ["version"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/xotl/crdt/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/xotl"]
+
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "hypothesis~=6.91.0",
+    "pytz>=2023.3.post1",
+    "ruff==0.2.1",
+    "isort~=5.13.2",
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "coverage[toml]>=7.4.0",
+    "mypy>=1.8.0",
+    "sphinx>=7.1.2",
+    "types-python-dateutil",
+    "ipython>=8.12.3",
+    "tox>=4.12.1",
+    "python-dateutil>=2.8.2",
+    "furo>=2024.1.29",
+]
+
+
+[tool.isort]
+profile = "black"
+line_length = 85
+src_paths = ["src/"]
+skip_gitignore = true
+
+[tool.ruff]
+required-version = "0.2.1"
+line-length = 85
+target-version = "py311"
+
+[tool.ruff.lint]
+ignore = [
+  "E501", # line-length is left to the formatter
+  "E731", # do not assign a `lambda` expression, use a `def` (we use it a lot)
+]
+preview = true
+exclude = ["src/xotl/crdt/_version.py"]
+
+
+[tool.ruff.format]
+preview = true
+exclude = ["src/xotl/crdt/_version.py"]
+
+
+[tool.coverage.run]
+branch = false
+omit = ["src/xotl/crdt/_version.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "pragma: no-cover",
+  "def __repr__",
+  "def __hash__",
+  "def __str__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "return NotImplemented",
+  "if __name__ == .__main__.:",
+  "if t.TYPE_CHECKING:",
+  "if TYPE_CHECKING:",
+]
+
+fail_under = 95
+skip_covered = true
+show_missing = true
+
+
+[tool.pyright]
+strictParameterNoneValue = false
+useLibraryCodeForTypes = true
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnnecessaryCast = true
+reportDuplicateImport = true
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportShadowedImports = "warning"
+stubPath = ""
+include = [
+  "xotl/crdt",
+]

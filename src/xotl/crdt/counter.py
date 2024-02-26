@@ -11,9 +11,7 @@ from xotl.crdt.clocks import VClock
 
 
 class GCounter(CvRDT):
-    """A increment-only counter.
-
-    """
+    """A increment-only counter."""
 
     def init(self):
         self.vclock = VClock()

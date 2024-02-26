@@ -6,15 +6,16 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from typing import Iterable, Any
+from __future__ import annotations
+
+import typing as t
+
 from xotl.crdt.base import CvRDT
-from xotl.crdt.clocks import VClock, Dot
+from xotl.crdt.clocks import Dot, VClock
 
 
 class GSet(CvRDT):
-    """The Grow-only set.
-
-    """
+    """The Grow-only set."""
 
     def init(self):
         self.items = set()
@@ -33,14 +34,14 @@ class GSet(CvRDT):
             return NotImplemented
         return self.process == other.process and self.items == other.items
 
-    def merge(self, other: "GSet") -> None:  # type: ignore
+    def merge(self, other: GSet) -> None:
         self.items |= other.value
 
     def add(self, item):
         "Add `item` to the set."
         self.items.add(item)
 
-    def reset(self, items: Iterable[Any] = None):
+    def reset(self, items: t.Optional[t.Iterable[t.Any]] = None):
         "Reset the set with `items`."
         self.items = set(items or [])
 
@@ -69,7 +70,7 @@ class TwoPhaseSet(CvRDT):
             and self.dead == other.dead
         )
 
-    def merge(self, other: "TwoPhaseSet") -> None:  # type: ignore
+    def merge(self, other: TwoPhaseSet) -> None:
         self.living.items |= other.living.items
         self.dead.items |= other.dead.items
 
@@ -90,7 +91,7 @@ class TwoPhaseSet(CvRDT):
         else:
             return False
 
-    def reset(self, items: Iterable[Any] = None):
+    def reset(self, items: t.Optional[t.Iterable[t.Any]] = None):
         """Reset to an initial value of `items`."""
         self.living.reset(items)
         self.dead.reset()
@@ -124,7 +125,7 @@ class USet(CvRDT):
         else:
             return NotImplemented
 
-    def merge(self, other: "USet") -> None:  # type: ignore
+    def merge(self, other: USet) -> None:
         if self.vclock >= other.vclock:
             # Our history contains all of others so we can stay the same.
             pass
@@ -160,19 +161,17 @@ class USet(CvRDT):
     def __repr__(self):
         return f"<USet: {self.value}; {self.process}, {self.vclock}>"
 
-    def reset(self, items: Iterable[Any] = None):
+    def reset(self, items: t.Optional[t.Iterable[t.Any]] = None):
         "Reset the value with `items`."
         self.vlock = VClock()
         self.items = set(items or [])
 
 
 class ORSet(CvRDT):
-    """The Observed-Remove Set.
-
-    """
+    """The Observed-Remove Set."""
 
     def init(self):
-        self.items: USet = USet(process=self.process)
+        self.items = USet(process=self.process)
         self.ticks = 0
 
     def __le__(self, other) -> bool:
@@ -191,7 +190,7 @@ class ORSet(CvRDT):
         else:
             return NotImplemented
 
-    def merge(self, other: "ORSet") -> None:  # type: ignore
+    def merge(self, other: ORSet) -> None:
         self.items.merge(other.items)
 
     @property
@@ -210,9 +209,7 @@ class ORSet(CvRDT):
             return 0
 
     def add(self, item):
-        """Add `item` to the set.
-
-        """
+        """Add `item` to the set."""
         # USet requires unique items, we expect the processes names are unique
         # in the cluster and each have an ever increasing tick.
         self.ticks += 1
@@ -240,10 +237,8 @@ class ORSet(CvRDT):
     def __repr__(self):
         return f"<ORSet: {self.value}; {self.process}, {self.items}>"
 
-    def reset(self, items: Iterable[Any] = None):
-        """Reset the value of the set with `items`.
-
-        """
+    def reset(self, items: t.Optional[t.Iterable[t.Any]] = None):
+        """Reset the value of the set with `items`."""
         self.init()
         for item in items or []:
             self.add(item)

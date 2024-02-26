@@ -6,8 +6,14 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-from xotl.crdt.testing.registers import LWWRegisterMachine, LWWRegisterConcurrentMachine
+from xotl.crdt.testing.sets import (
+    GSetMachine,
+    ORSetMachine,
+    TPSetMachine,
+    USetMachine,
+)
 
-
-TestLWWRegister = LWWRegisterMachine.TestCase
-TestLWWRegisterConcurrent = LWWRegisterConcurrentMachine.TestCase
+TestGSet = GSetMachine.TestCase
+TestTPSet = TPSetMachine.TestCase
+TestUSet = USetMachine.TestCase
+TestORSet = ORSetMachine.TestCase

@@ -26,12 +26,21 @@ copyright = "{}, Merchise Autrement [~º/~]"
 copyright = copyright.format(datetime.now().year)
 author = "Merchise Autrement [~º/~]"
 
-import pkg_resources
+# The full version, including alpha/beta/rc tags
+try:
+    from xotl.crdt._version import version
 
-dist = pkg_resources.get_distribution(project)
-# The short X.Y version.
-version = dist.version
-release = version
+    release = version
+except ImportError:
+    from importlib import metadata
+    from importlib.metadata import PackageNotFoundError
+
+    try:
+        dist = metadata.distribution("xotl-crdt")
+        version = release = dist.version
+    except PackageNotFoundError:
+        version = "dev"
+        release = "dev"
 
 
 # -- General configuration ---------------------------------------------------
@@ -85,13 +94,15 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-try:
-    import sphinx_rtd_theme as theme
-
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [theme.get_html_theme_path()]
-except ImportError:
-    html_theme = "pyramid"
+default_role = "code"
+html_theme = "furo"
+html_theme_options = {
+    "light_css_variables": {
+        "font-stack--monospace": '"Roboto Mono", "SFMono-Regular", Menlo, Consolas, Monaco, "Liberation Mono", "Lucida Console", monospace',
+    },
+}
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

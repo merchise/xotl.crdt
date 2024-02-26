@@ -6,13 +6,14 @@
 #
 # This is free software; you can do what the LICENCE file allows you to.
 #
-"""Implements the Vector Clocks.
+"""Implements the Vector Clocks."""
 
-"""
-from typing import Tuple, Sequence
+from __future__ import annotations
 
+import typing as t
 from collections import deque
 from dataclasses import dataclass
+from heapq import merge
 from itertools import groupby
 from operator import attrgetter
 
@@ -21,9 +22,7 @@ from xotl.crdt.base import Process
 
 @dataclass(frozen=True, order=False, eq=True)
 class Dot:
-    """A component on the vector clock.
-
-    """
+    """A component on the vector clock."""
 
     # process names should be unique across all processes
     process: Process
@@ -32,19 +31,19 @@ class Dot:
 
 @dataclass(frozen=True, init=False)
 class VClock:
-    dots: Tuple[Dot, ...]
+    dots: t.Tuple[Dot, ...]
 
-    def __init__(self, dots: Sequence[Dot] = None) -> None:
+    def __init__(self, dots: t.Optional[t.Sequence[Dot]] = None) -> None:
         if dots:
-            assert len([d.process for d in dots]) == len(
-                {d.process for d in dots}
-            ), f"Repeated processes in {dots!r}"
+            assert len([d.process for d in dots]) == len({
+                d.process for d in dots
+            }), f"Repeated processes in {dots!r}"
         # Avoid silly counters.
         dots = [d for d in (dots or []) if d.counter >= 0]
         dots.sort(key=attrgetter("process"))
         object.__setattr__(self, "dots", tuple(dots))
 
-    def __ge__(self, other: "VClock") -> bool:
+    def __ge__(self, other) -> bool:
         """True if this vclock descends (happens after) from other."""
         if isinstance(other, VClock):
             # Remember, that '.dots' are ordered by 'process'; with this in
@@ -74,7 +73,7 @@ class VClock:
         else:
             return NotImplemented
 
-    def __eq__(self, other: "VClock") -> bool:  # type: ignore
+    def __eq__(self, other) -> bool:  # type: ignore
         """True if this vclock is the same as other."""
         if isinstance(other, VClock):
             # Equality requires that every process present in `self` must be
@@ -90,7 +89,7 @@ class VClock:
         # NB: self.dots is ordered by process, so we get a consistent hash.
         return hash(tuple(d for d in self.dots if d.counter))
 
-    def __floordiv__(self, other: "VClock") -> bool:
+    def __floordiv__(self, other) -> bool:
         """True if neither self descends from other nor other from self.
 
         This means that self and other represent concurrent events in
@@ -100,7 +99,7 @@ class VClock:
         """
         return not (self <= other) and not (other <= self)
 
-    def __le__(self, other: "VClock") -> bool:
+    def __le__(self, other) -> bool:
         return other >= self
 
     def __gt__(self, other):
@@ -122,18 +121,15 @@ class VClock:
     def __bool__(self):  # pragma: no cover
         return bool(self.dots)
 
-    def merge(self, *others: "VClock") -> "VClock":
+    def merge(self, *others: VClock) -> VClock:
         """Return the least possible common descendant."""
-        from heapq import merge
-
         get_process = attrgetter("process")
         groups = groupby(
             merge(self.dots, *(o.dots for o in others), key=get_process),
             key=get_process,
         )
         dots = [
-            Dot(process, max(d.counter for d in group))
-            for process, group in groups
+            Dot(process, max(d.counter for d in group)) for process, group in groups
         ]
         # Silly little trick to avoid sorting what is sorted already
         result = VClock()
@@ -151,8 +147,6 @@ class VClock:
             dots = list(self.dots)
             dots[i] = Dot(process, dots[i].counter + 1)
         except ValueError:
-            from heapq import merge
-
             new = Dot(process, 1)
             dots = merge(self.dots, [new], key=attrgetter("process"))
         result = VClock()
@@ -172,7 +166,7 @@ class VClock:
         object.__setattr__(self, "dots", ())
 
 
-def index(a, x, key=None):  # pragma: no cover
+def index(a, x, key=None):
     "Locate the leftmost value exactly equal to x."
     from bisect import bisect_left
 

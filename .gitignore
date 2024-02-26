@@ -14,3 +14,5 @@ dist/
 *#
 #*
 .coverage
+.python-version
+src/xotl/crdt/_version.py
