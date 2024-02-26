@@ -144,6 +144,10 @@ build documentation:
   interruptible: true
   needs:
     - run doctests
+  artifacts:
+    paths:
+      - docs/build/html
+    expire_in: 1 day
   only: &when-build-documentation-only
     refs:
       - main
@@ -163,6 +167,7 @@ pages:
   artifacts:
     paths:
       - public
+    expire_in: 1 day
   only:
     refs:
       - main
