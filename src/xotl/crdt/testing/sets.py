@@ -76,7 +76,7 @@ class TPSetMachine(SyncBasedCRDTMachine):
         super().__init__()
         self.subjects = self.create_subjects(TwoPhaseSet)
 
-    items = Bundle("items")
+    items = Bundle("items")  # type: ignore
 
     @rule(target=items, value=st.integers())
     def generate_item(self, value):
@@ -119,7 +119,7 @@ class SyncBasedSetMachine(SyncBasedCRDTMachine):
 
     """
 
-    items = Bundle("items")
+    items = Bundle("items")  # type: ignore
 
     @rule(target=items, value=st.integers(min_value=0))
     def generate_item(self, value):
@@ -142,7 +142,7 @@ class USetMachine(SyncBasedSetMachine):
         self.subjects = self.create_subjects(USet)
         print("************ New USet case *************")
 
-    added_items = Bundle("added_items")
+    added_items = Bundle("added_items")  # type: ignore
 
     # We consume an item from the 'items' bundle and add it to the 'added
     # items'.  The remove_item method takes only from the last bundle.

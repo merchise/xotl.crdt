@@ -8,6 +8,11 @@
 #
 """Base interfaces."""
 
+from __future__ import annotations
+
+import abc
+import pickle
+import typing as t
 from dataclasses import dataclass
 
 
@@ -53,7 +58,8 @@ class CvRDT:
     def init(self) -> None:
         """Set the initial state of a newly create CRDT."""
 
-    def merge(self, other: "CvRDT") -> None:
+    @abc.abstractmethod
+    def merge(self: t.Self, other: t.Self) -> None:
         """Update the CvRDT to account for the another replica's state."""
         raise NotImplementedError
 
@@ -70,6 +76,7 @@ class CvRDT:
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def reset(self) -> None:
         "Reset the internal state of value, usually to the initial state."
         raise NotImplementedError
@@ -93,8 +100,6 @@ class CvRDT:
 
 def get_state(crdt: CvRDT) -> bytes:
     """Dumps the crdt in a way that is amenable for transmission/storage."""
-    import pickle
-
     return pickle.dumps(crdt)
 
 
@@ -107,8 +112,6 @@ def from_state(state: bytes) -> CvRDT:
         assert crdt == from_state(get_state(crdt))
 
     """
-    import pickle
-
     res = pickle.loads(state)
     if not isinstance(res, CvRDT):
         raise ValueError("Invalid state")  # pragma: no cover
