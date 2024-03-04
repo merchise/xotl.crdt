@@ -1,14 +1,18 @@
 RYE_EXEC ?= rye run
 PYTHON_VERSION ?= 3.12
-PATH := $(HOME)/.rye/shims:$(PATH)
+CARGO_HOME ?= $(HOME)/.cargo
+PATH := $(HOME)/.rye/shims:$(CARGO_HOME)/bin:$(PATH)
 
 SHELL := /bin/bash
 PYTHON_FILES := $(shell find src/$(PROJECT_NAME) -type f -name '*.py' -o -name '*.pyi')
 
+USE_UV ?= true
 install:
-	rye self update || curl -sSf https://rye-up.com/get | bash
-	rye pin --relaxed $(PYTHON_VERSION)
-	rye sync
+	@uv --version || curl -LsSf https://astral.sh/uv/install.sh | sh
+	@rye self update || curl -sSf https://rye-up.com/get | RYE_INSTALL_OPTION="--yes" bash
+	@rye config --set-bool behavior.use-uv=$(USE_UV)
+	@rye pin --relaxed $(PYTHON_VERSION)
+	@rye sync --no-lock
 .PHONY: install
 
 format:
