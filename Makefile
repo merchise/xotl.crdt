@@ -15,6 +15,15 @@ install:
 	@rye sync --no-lock
 .PHONY: install
 
+sync:
+	@rye sync --no-lock
+.PHONY: sync
+
+lock:
+	@rye sync
+.PHONY: lock
+
+
 format:
 	@$(RYE_EXEC) ruff --fix src/
 	@$(RYE_EXEC) isort src/
