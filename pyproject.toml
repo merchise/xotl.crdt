@@ -43,7 +43,7 @@ managed = true
 dev-dependencies = [
     "hypothesis~=6.91.0",
     "pytz>=2023.3.post1",
-    "ruff==0.2.1",
+    "ruff==0.3.5",
     "isort~=5.13.2",
     "pytest>=7.4.4",
     "pytest-cov>=4.1.0",
@@ -65,7 +65,6 @@ src_paths = ["src/"]
 skip_gitignore = true
 
 [tool.ruff]
-required-version = "0.2.1"
 line-length = 85
 target-version = "py311"
 

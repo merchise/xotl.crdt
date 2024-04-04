@@ -25,13 +25,13 @@ lock:
 
 
 format:
-	@$(RYE_EXEC) ruff --fix src/
+	@$(RYE_EXEC) ruff check --fix src/
 	@$(RYE_EXEC) isort src/
 	@$(RYE_EXEC) ruff format src/
 .PHONY: format
 
 lint:
-	@$(RYE_EXEC) ruff src/
+	@$(RYE_EXEC) ruff check src/
 	@$(RYE_EXEC) ruff format --check src/
 	@$(RYE_EXEC) isort --check src/
 .PHONY: lint
